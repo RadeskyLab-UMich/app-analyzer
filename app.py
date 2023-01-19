@@ -1,41 +1,54 @@
-from dash import Dash, dcc, html
+from dash import Dash, dcc, html, dash_table as dt
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
+from api import Play, Apple
 
 THEME = dbc.themes.LUMEN
-STATIC = "./static/"
 
-app = Dash(__name__, external_stylesheets=[THEME, STATIC + 'styles.css'])
+app = Dash(__name__, external_stylesheets=[THEME, "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"])
+app.title = 'App Analyzer'
 
 search_bar = dbc.Row(
     [
         dbc.Col(
-            dbc.Input(type="search", placeholder="Enter an app ID or keywords"),
+            html.Abbr(
+                html.I(className="fa-solid fa-circle-info"),
+                title='''Search with Play Store app ID - play: <id>\
+                    \nSearch with App Store app title - apple: <title>\
+                    \nSearch with keywords - <keywords>'''
+            ),
+            width=1
+        ),
+        dbc.Col(
+            dbc.Input(id="search-term", type="search", placeholder="Enter an app ID or keywords", value="play: com.mojang.minecraftpe"),
         ),
         dbc.Col(
             dbc.Button(
-                "Search", color="primary", class_name="ms-2", n_clicks=0
+                "Search", color="primary", class_name="ms-2",
+                id="search-button", n_clicks=0
             ),
             width="auto",
         ),
+        html.Div(children="", id='search-temp', style={'display': 'none'}),
+        html.Div(children=[], id='result-temp', style={'display': 'none'})
     ],
     class_name="g-0 ms-auto flex-wrap mt-3 mt-md-0",
     align="center",
     style={'min-width': '350px'}
 )
 
-navbar = dbc.Navbar(
+header = dbc.Navbar(
     dbc.Container(
         [
             html.A(
                 dbc.Row(
                     [
                         dbc.Col(
-                            html.Img(src=STATIC + 'icon.png', height="25px")
+                            html.Img(src=app.get_asset_url('icon.png'), height="25px")
                         ),
                         dbc.Col(
-                            dbc.NavbarBrand("App Analyzer", className="ms-2"),
+                            dbc.NavbarBrand("App Analyzer", class_name="ms-2"),
                         ),
                     ],
                     align="center",
@@ -59,8 +72,77 @@ navbar = dbc.Navbar(
     dark=True,
 )
 
+play_tab = dbc.Row(
+    [
+        dbc.Col(
+            [
+                html.H2(id='play-title'),
+                html.H6(["App ID: ", html.Span(id='play-id')]),
+                dbc.Spinner(
+                    dt.DataTable(
+                        id='play-details',
+                        columns=[
+                            {"name": "Feature", "id": "Feature"},
+                            {"name": "Value", "id": "Value"}
+                        ],
+                        style_as_list_view=True,
+                        style_cell={'fontSize': 14, 'textAlign': 'left', 'paddingRight': '1rem'},
+                        style_header={'fontWeight': 'bold', 'backgroundColor': '#999999', 'color': 'white'},
+                        fill_width=False
+                    )
+                )
+            ],
+            width=6
+        ),
+        dbc.Col(
+            dbc.Spinner(
+                dt.DataTable(
+                    id='play-reviews'
+                )
+            ),
+            width=6
+        )
+    ],
+    justify='center'
+)
 
-# add callback for toggling the collapse on small screens
+apple_tab = dbc.Row(
+    [
+        dbc.Col(
+            dbc.Spinner(
+                dt.DataTable(
+                    id='apple-details'
+                )
+            ),
+            width=6
+        ),
+        dbc.Col(
+            dbc.Spinner(
+                dt.DataTable(
+                    id='apple-reviews'
+                )
+            ),
+            width=6
+        )
+    ],
+    justify='center'
+) 
+
+
+body = dbc.Container(
+    [
+        html.Br(),
+        dbc.Tabs(
+            [
+                dbc.Tab(play_tab, label="Play Store", tab_style={'marginLeft':'auto'}),
+                dbc.Tab(apple_tab, label="Apple App Store")
+            ]
+        )
+    ]
+)
+
+
+# callback for toggling the collapse on small screens
 @app.callback(
     Output("navbar-collapse", "is_open"),
     [Input("navbar-toggler", "n_clicks")],
@@ -71,8 +153,68 @@ def toggle_navbar_collapse(n, is_open):
         return not is_open
     return is_open
 
+# callback for updating search term when the search button is clicked
+@app.callback(
+    Output('search-temp', 'children'),
+    [Input('search-button', 'n_clicks')],
+    [State('search-term', 'value')]
+)
+def update_term(click, term):
+    return term
 
-app.layout = html.Div([navbar])
+# callbacks for updating metadata
+@app.callback(
+    [Output('result-temp', 'children')],
+    [Input('search-temp', 'children')]
+)
+def fetch_details(term):
+    if "play: " in term:
+        app_id = term.split("play:")[1].strip()
+        app = Play(app_id=app_id)
+        play_details = app.get_details()
+    elif "apple: " in term:
+        app_id = term.split("play:")[1].strip()
+    else:
+        pass
+    return [play_details]
+
+
+@app.callback(
+    [
+        Output('play-title', 'children'),
+        Output('play-id', 'children'),
+    ],
+    [Input('result-temp', 'children')]
+)
+def update_meta(data):
+    return [data['title'], data['appId']]
+
+@app.callback(
+    [
+        Output('play-details', 'data'),
+        # Output('play-reviews', 'children'),
+        # Output('apple-details', 'children'),
+        # Output('apple-reviews', 'children')
+    ],
+    [Input('result-temp', 'children')]
+)
+def update_tables(data):
+    play_table = play_features(data)
+    return play_table
+
+def play_features(data):
+    features = ['realInstalls', 'score', 'ratings', 'reviews', 'price', 'free', 'currency', 'sale',
+    'offersIAP', 'inAppProductPrice', 'genreId', 'contentRating', 'adSupported', 'containsAds', 'released']
+    data_filtered = {k: data[k] for k in data.keys() & set(features)}
+    df = pd.DataFrame(data_filtered, index=[0])
+    df['releasedYear'] = pd.to_datetime(df['released']).dt.year
+    df.drop(columns=['released'], inplace=True)
+    return [df.melt(var_name="Feature", value_name="Value").to_dict('records')]
+
+def apple_features(data):
+    pass
+
+app.layout = html.Div([header, body])
 
 if __name__ == '__main__':
     app.run_server(debug=True)
