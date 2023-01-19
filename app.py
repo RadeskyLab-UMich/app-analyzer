@@ -7,6 +7,7 @@ from api import Play, Apple
 THEME = dbc.themes.LUMEN
 
 app = Dash(__name__, external_stylesheets=[THEME, "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"])
+server = app.server
 app.title = 'App Analyzer'
 
 search_bar = dbc.Row(
