@@ -1,0 +1,18 @@
+abbr {
+    color: white;
+}
+
+.nav-link {
+    color: white;
+}
+
+.nav-link:hover {
+    background-color: #5a9bb5;
+    color: white;
+    border-radius: 0.25rem;
+}
+
+.nav-link.active {
+    background-color: #158cba !important;
+    color: white !important;
+}
