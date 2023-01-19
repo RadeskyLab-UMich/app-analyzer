@@ -3,9 +3,13 @@ import re
 import pandas as pd
 import numpy as np
 from scipy.stats import skew
+import nltk
 from nltk import word_tokenize
 from nltk.corpus import stopwords
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('vader_lexicon')
 
 def play_features(data):
     features = ['realInstalls', 'score', 'description', 'ratings', 'reviews', 'histogram', 'price', 'free', 'currency', 'sale',
