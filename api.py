@@ -1,12 +1,12 @@
 import os
 import requests
 from google_play_scraper import app, Sort, reviews, reviews_all, search
-from app_store_scraper import AppStore
 from dotenv import load_dotenv
+import pandas as pd
 load_dotenv()
 
 class Play:
-    def __init__(self, country, app_id=None, search=None):
+    def __init__(self, country='us', app_id=None, search=None):
         self.country = country
         if app_id is not None:
              self.app_id = app_id
@@ -19,8 +19,18 @@ class Play:
         result = app(country=self.country, app_id=self.app_id)
         return result
 
-    def get_reviews(self, n_reviews=100, sort='newest'):
-        if sort == 'newest':
+    def get_reviews(self, n_reviews=100, sort='recency'):
+        """
+        Parameters
+        ----------
+        n_reviews : str, int (optional)
+            The number of reviews to return. 'all' returns all reviews.
+            Defaults to 100.
+        sort : str (optional)
+            The sorting method for the reviews. Choose between 'recency' and 'relevance'.
+            Defaults to 'recency'.
+        """
+        if sort == 'recency':
             if n_reviews == 'all':
                 result = reviews_all(self.app_id, count=n_reviews, sort=Sort.NEWEST)
             result, _ = reviews(self.app_id, count=n_reviews, sort=Sort.NEWEST)
@@ -31,23 +41,44 @@ class Play:
             result, _ = reviews(self.app_id, count=n_reviews, sort=Sort.MOST_RELEVANT)
             return result
         else:
-            raise ValueError("Invalid sort type. Expected either 'newest' or 'relevance'.")
+            raise ValueError("Invalid sort type. Expected either 'recency' or 'relevance'.")
 
-class App:
-    def __init__(self, country, app_name=None, app_id=None):
+class Apple:
+    def __init__(self, country='us', app_id=None, search=None):
         self.country = country
-        if app_name is None:
-            pass
-        self.app = AppStore(app_name=app_name, country=country)
-        if app_id is None:
-            app_id = self.app.search_id()
-        self.app_id = int(app_id)
+        if app_id is not None:
+            self.app_id = app_id
+        elif search is not None:
+            self.app_id = search_app(term=search, store='apple', country=country, strategy='id')
+        else:
+            raise ValueError("Either an app ID or a search term must be provided.")
 
     def get_details(self):
-        pass
+        SERP_PROD = "https://serpapi.com/search.json?engine=apple_product&"
+        result = requests.get(f"{SERP_PROD}country={self.country}&product_id={self.app_id}&api_key={os.getenv('SERP_KEY')}").json()
+        return result
 
-    def get_reviews(self):
-        pass
+    def get_reviews(self, n_reviews=100, sort='recency'):
+        """
+        Parameters
+        ----------
+        n_reviews : str, int (optional)
+            The number of reviews to return. 'all' returns all reviews.
+            Defaults to 100.
+        sort : str (optional)
+            The sorting method for the reviews. Choose between 'recency' and 'relevance'.
+            Defaults to 'recency'.
+        """
+        SERP_PROD = "https://serpapi.com/search.json?engine=apple_reviews&"
+        if sort == 'recency':
+            result = requests.get(f"{SERP_PROD}country={self.country}&product_id={self.app_id}&sort=mostrecent&api_key={os.getenv('SERP_KEY')}").json()
+            return result
+        elif sort == 'relevance':
+            result = requests.get(f"{SERP_PROD}country={self.country}&product_id={self.app_id}&sort=mosthelpful&api_key={os.getenv('SERP_KEY')}").json()
+            return result
+        else:
+            raise ValueError("Invalid sort type. Expected either 'recency' or 'relevance'.")
+    
 
 
 def search_app(term, store='play', country='us', strategy='id'):
@@ -75,10 +106,10 @@ def search_app(term, store='play', country='us', strategy='id'):
             return result[0]['appId']
         elif store == "apple":
             result = requests.get(f"{SERP_URL}&term={term}&country={country}&num={1}&api_key={os.getenv('SERP_KEY')}").json()
-            return result['organic_results'][0]['title']  # AppStore requires the app name instead of app id
+            return result['organic_results'][0]['id']  # AppStore requires the app name instead of app id
         else:
             raise ValueError("Invalid store type. Expected one of: %s." % store_ls)
-    elif strategy.isnumeric():
+    elif isinstance(strategy, int):
         if store == "play":
             result = search(term, country=country, n_hits=strategy)
             return result
