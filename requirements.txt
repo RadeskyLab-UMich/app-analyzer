@@ -4,3 +4,4 @@ google_play_scraper==1.2.2
 pandas==1.5.2
 python-dotenv==0.21.0
 requests==2.23.0
+gunicorn==20.1.0
