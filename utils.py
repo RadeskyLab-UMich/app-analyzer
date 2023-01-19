@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import skew
+import nltk
+from nltk import word_tokenize
+from nltk.corpus import stopwords
 
 def play_features(data):
     features = ['realInstalls', 'score', 'ratings', 'reviews', 'histogram', 'price', 'free', 'currency', 'sale',
