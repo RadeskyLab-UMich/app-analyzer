@@ -1,8 +1,8 @@
 from dash import Dash, dcc, html, dash_table as dt
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
-import pandas as pd
 from api import Play, Apple
+from utils import *
 
 THEME = dbc.themes.LUMEN
 
@@ -77,8 +77,20 @@ play_tab = dbc.Row(
     [
         dbc.Col(
             [
-                html.H2(id='play-title'),
-                html.H6(["App ID: ", html.Span(id='play-id')]),
+                html.Br(),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            html.Img(id='play-img', height="55px"), width="auto", style={"margin": "auto"}
+                        ),
+                        dbc.Col(
+                            [
+                                html.H2(html.A(id='play-title', target="_blank")),
+                                html.H6(["App ID: ", html.Span(id='play-id')]),
+                            ]
+                        )
+                    ]
+                ),
                 dbc.Spinner(
                     dt.DataTable(
                         id='play-details',
@@ -89,7 +101,8 @@ play_tab = dbc.Row(
                         style_as_list_view=True,
                         style_cell={'fontSize': 14, 'textAlign': 'left', 'paddingRight': '1rem'},
                         style_header={'fontWeight': 'bold', 'backgroundColor': '#999999', 'color': 'white'},
-                        fill_width=False
+                        fill_width=False,
+                        cell_selectable=False
                     )
                 )
             ],
@@ -176,19 +189,21 @@ def fetch_details(term):
     elif "apple: " in term:
         app_id = term.split("play:")[1].strip()
     else:
-        pass
+        app = Play(search=term)
+        play_details = app.get_details()
     return [play_details]
-
 
 @app.callback(
     [
         Output('play-title', 'children'),
+        Output('play-title', 'href'),
         Output('play-id', 'children'),
+        Output('play-img', 'src'),
     ],
     [Input('result-temp', 'children')]
 )
 def update_meta(data):
-    return [data['title'], data['appId']]
+    return [data['title'], data['url'], data['appId'], data['icon']]
 
 @app.callback(
     [
@@ -203,17 +218,6 @@ def update_tables(data):
     play_table = play_features(data)
     return play_table
 
-def play_features(data):
-    features = ['realInstalls', 'score', 'ratings', 'reviews', 'price', 'free', 'currency', 'sale',
-    'offersIAP', 'inAppProductPrice', 'genreId', 'contentRating', 'adSupported', 'containsAds', 'released']
-    data_filtered = {k: data[k] for k in data.keys() & set(features)}
-    df = pd.DataFrame(data_filtered, index=[0])
-    df['releasedYear'] = pd.to_datetime(df['released']).dt.year
-    df.drop(columns=['released'], inplace=True)
-    return [df.melt(var_name="Feature", value_name="Value").to_dict('records')]
-
-def apple_features(data):
-    pass
 
 app.layout = html.Div([header, body])
 
