@@ -1,5 +1,5 @@
 import dash
-from dash import html, dash_table as dt
+from dash import html, dcc, dash_table as dt
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 from api import Play, Apple
@@ -28,8 +28,8 @@ search_bar = dbc.Row(
             ),
             width="auto",
         ),
-        html.Div(children="", id='search-temp', style={'display': 'none'}),
-        html.Div(children=[], id='result-temp', style={'display': 'none'})
+        dcc.Store(id='search-temp'),
+        dcc.Store(id='result-temp')
     ],
     class_name="g-0 ms-auto flex-wrap mx-auto",
     align="center",
@@ -63,7 +63,7 @@ play_tab = dbc.Row(
                                 {"name": "Value", "id": "Value"}
                             ],
                             style_as_list_view=True,
-                            style_cell={'fontSize': 14, 'textAlign': 'left', 'paddingRight': '2rem'},
+                            style_cell={'fontSize': 14, 'textAlign': 'left', 'paddingRight': '2rem', 'fontFamily': "Helvetica Neue"},
                             style_header={'fontWeight': 'bold', 'backgroundColor': '#999999', 'color': 'white'},
                             fill_width=False,
                             cell_selectable=False
@@ -126,7 +126,7 @@ layout = dbc.Container(
 
 # callback for updating search term when the search button is clicked
 @dash.callback(
-    Output('search-temp', 'children'),
+    Output('search-temp', 'data'),
     [Input('search-button', 'n_clicks')],
     [State('search-term', 'value')]
 )
@@ -135,8 +135,8 @@ def update_term(click, term):
 
 # callbacks for updating metadata
 @dash.callback(
-    [Output('result-temp', 'children')],
-    [Input('search-temp', 'children')]
+    [Output('result-temp', 'data')],
+    [Input('search-temp', 'data')]
 )
 def fetch_details(term):
     if "play: " in term:
@@ -157,7 +157,7 @@ def fetch_details(term):
         Output('play-id', 'children'),
         Output('play-img', 'src'),
     ],
-    [Input('result-temp', 'children')]
+    [Input('result-temp', 'data')]
 )
 def update_meta(data):
     return [data['title'], data['url'], data['appId'], data['icon']]
@@ -169,7 +169,7 @@ def update_meta(data):
         # Output('apple-details', 'children'),
         # Output('apple-reviews', 'children')
     ],
-    [Input('result-temp', 'children')]
+    [Input('result-temp', 'data')]
 )
 def update_tables(data):
     play_table = play_features(data)
