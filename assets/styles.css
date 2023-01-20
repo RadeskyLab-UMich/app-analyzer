@@ -1,3 +1,7 @@
+body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
 abbr {
     color: #808080;
 }
@@ -8,6 +12,7 @@ h6 {
 
 .nav-link {
     color: white;
+    font-weight: 500;
 }
 
 .nav-link:hover {
@@ -19,4 +24,9 @@ h6 {
 .nav-link.active {
     background-color: #158cba !important;
     color: white !important;
+}
+
+.nav-link a {
+    color: white;
+    text-decoration: none;
 }
