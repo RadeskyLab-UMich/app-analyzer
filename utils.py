@@ -15,17 +15,29 @@ def play_features(data):
     features = ['realInstalls', 'score', 'description', 'ratings', 'reviews', 'histogram', 'price', 'free', 'currency', 'sale',
     'offersIAP', 'inAppProductPrice', 'genreId', 'contentRating', 'adSupported', 'containsAds', 'released']
     data_filtered = {k: data[k] for k in data.keys() & set(features)}
-    data_filtered['reviewsStd'] = np.std(data_filtered['histogram'])
-    data_filtered['reviewsSkew'] = skew(np.concatenate([np.full(n, i+1) for i, n in enumerate(data_filtered['histogram'])]))
+    reviews_dist = np.concatenate([np.full(n, i+1) for i, n in enumerate(data_filtered['histogram'])])
+    data_filtered['reviewsStd'] = np.std(reviews_dist)
+    data_filtered['reviewsSkew'] = skew(reviews_dist)
     sia = SentimentIntensityAnalyzer()
     data_filtered['descriptionSentiment'] = sia.polarity_scores(process_text(data_filtered['description']))['compound']
+    if data_filtered['inAppProductPrice'] is not None:
+        data_filtered['IAPMin'] = re.search(r'\$([^ ]+)', data_filtered['inAppProductPrice']).group(1)
+        try:
+            data_filtered['IAPMax'] = re.search(r'- \$([^p]+)', data_filtered['inAppProductPrice']).group(1)
+        except AttributeError:
+            data_filtered['IAPMax'] = data_filtered['IAPMin']
+    else:
+        data_filtered['IAPMin'] = 0
+        data_filtered['IAPMax'] = 0
+    data_filtered['releasedYear'] = int(data_filtered['released'][-4:])
+
     data_filtered.pop('histogram')
     data_filtered.pop('description')
+    data_filtered.pop('inAppProductPrice')
+    data_filtered.pop('released')
+
     df = pd.DataFrame(data_filtered, index=[0])
-    df['releasedYear'] = pd.to_datetime(df['released']).dt.year
-    df['IAPMin'] = df['inAppProductPrice'].str.extract(r'\$([^-]+)')
-    df['IAPMax'] = df['inAppProductPrice'].str.extract(r'- \$([^p]+)')
-    df.drop(columns=['released', 'inAppProductPrice'], inplace=True)
+
     return [df.melt(var_name="Feature", value_name="Value").to_dict('records')]
 
 def apple_features(data):
