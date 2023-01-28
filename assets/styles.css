@@ -2,8 +2,29 @@ body {
     font-family: "Helvetica Neue", Arial, sans-serif;
 }
 
-abbr {
-    color: #808080;
+.tooltip {
+    position: relative;
+    display: inline-block;
+    opacity: 100;
+    color: #158cba;
+}
+
+.tooltip .info {
+    visibility: hidden;
+    background-color: #158cba;
+    color: white;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    white-space: pre-line;
+    
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+    bottom: 50%;
+}
+
+.tooltip:hover .info {
+    visibility: visible;
 }
 
 h6 {
