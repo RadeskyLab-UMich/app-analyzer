@@ -10,11 +10,18 @@ dash.register_page(__name__, path='/')
 search_bar = dbc.Row(
     [
         dbc.Col(
-            html.Abbr(
-                html.I(className="fa-solid fa-circle-info"),
-                title='''Search with Play Store app ID - play: <id>\
-                    \nSearch with App Store app title - apple: <title>\
-                    \nSearch with keywords - <keywords>'''
+            html.Div(
+                [
+                    html.I(className="fa-solid fa-circle-info"),
+                    html.P(
+                        '''Search with Play Store app ID - play: <id>\
+                        \nSearch with App Store app title - apple: <title>\
+                        \nSearch with keywords - <keywords>''',
+                        className='info',
+                        style={'width': '18rem'}
+                    )
+                ],
+                className="tooltip"
             ),
             width=1
         ),
@@ -29,7 +36,8 @@ search_bar = dbc.Row(
             width="auto",
         ),
         dcc.Store(id='search-temp'),
-        dcc.Store(id='result-temp')
+        dcc.Store(id='details-temp'),
+        dcc.Store(id='reviews-temp')
     ],
     class_name="g-0 ms-auto flex-wrap mx-auto",
     align="center",
@@ -63,13 +71,37 @@ play_tab = dbc.Row(
                                 {"name": "Value", "id": "Value"}
                             ],
                             style_as_list_view=True,
-                            style_cell={'fontSize': 14, 'textAlign': 'left', 'paddingRight': '2rem', 'fontFamily': "Helvetica Neue"},
+                            style_cell={'fontSize': '1rem', 'textAlign': 'left', 'paddingRight': '2rem', 'fontFamily': "Helvetica Neue"},
                             style_header={'fontWeight': 'bold', 'backgroundColor': '#999999', 'color': 'white'},
                             fill_width=False,
-                            cell_selectable=False
+                            cell_selectable=False,
+                            style_table={"marginBotton": "1rem"}
                         )
                     ]
-                )
+                ),
+                html.Br(),
+                dbc.Row(
+                    [
+                        html.Div(
+                            [
+                                html.I(className="fa-solid fa-circle-info"),
+                                html.P(
+                                    '''offersIAP: Offers in-app purchases\
+                                    \nReviewsStd: The standard deviation of user ratings\
+                                    \nReviewsSkew: The skewness of user ratings (negative value - skewed towards positive ratings)\
+                                    \ndescriptionSentiment: The app description's compound sentiment score, ranges from -1 to 1\
+                                    \nreviewsSentiment: The average compound sentiment score of the app's reviews, ranges from -1 to 1\
+                                    \nIAPMin: The minimum single-item price for in-app purchases\
+                                    \nIAPMax: The maximum single-item price for in-app purchases''',
+                                    className="info"
+                                ),
+                                " Glossary"
+                            ],
+                            className="tooltip"
+                        ),
+                    ]
+                ),
+                html.Br()
             ],
             width=6
         ),
@@ -116,7 +148,7 @@ layout = dbc.Container(
         dbc.Tabs(
             [
                 dbc.Tab(play_tab, label="Play Store", tab_id='play_tab', tab_style={'marginLeft':'auto'}),
-                dbc.Tab(apple_tab, label="Apple App Store", tab_id='apple_tab')
+                dbc.Tab(apple_tab, label="Apple App Store", tab_id='apple_tab', disabled=True)
             ],
             active_tab="play_tab",
         )
@@ -127,28 +159,38 @@ layout = dbc.Container(
 # callback for updating search term when the search button is clicked
 @dash.callback(
     Output('search-temp', 'data'),
-    [Input('search-button', 'n_clicks')],
-    [State('search-term', 'value')]
+    Input('search-button', 'n_clicks'),
+    State('search-term', 'value')
 )
 def update_term(click, term):
     return term
 
 # callbacks for updating metadata
 @dash.callback(
-    [Output('result-temp', 'data')],
-    [Input('search-temp', 'data')]
+    [
+        Output('details-temp', 'data'),
+        Output('reviews-temp', 'data')
+    ],
+    Input('search-temp', 'data')
 )
-def fetch_details(term):
+def fetch_info(term):
     if "play: " in term:
         app_id = term.split("play:")[1].strip()
-        app = Play(app_id=app_id)
-        play_details = app.get_details()
+        try:
+            app = Play(app_id=app_id)
+            play_details = app.get_details()
+            play_reviews = app.get_reviews(sort='relevance')
+        except:
+            app = Play(search=app_id)
+            play_details = app.get_details()
+            play_reviews = app.get_reviews(sort='relevance')
     elif "apple: " in term:
         app_id = term.split("play:")[1].strip()
     else:
         app = Play(search=term)
         play_details = app.get_details()
-    return [play_details]
+        play_reviews = app.get_reviews(sort='relevance')
+    return [play_details, play_reviews]
 
 @dash.callback(
     [
@@ -157,7 +199,7 @@ def fetch_details(term):
         Output('play-id', 'children'),
         Output('play-img', 'src'),
     ],
-    [Input('result-temp', 'data')]
+    Input('details-temp', 'data')
 )
 def update_meta(data):
     return [data['title'], data['url'], data['appId'], data['icon']]
@@ -169,8 +211,14 @@ def update_meta(data):
         # Output('apple-details', 'children'),
         # Output('apple-reviews', 'children')
     ],
-    [Input('result-temp', 'data')]
+    [
+        Input('details-temp', 'data'),
+        Input('reviews-temp', 'data')
+    ]
 )
-def update_tables(data):
-    play_table = play_features(data)
-    return play_table
+def update_tables(details, reviews):
+    play_info = play_features(details, reviews)
+    filter_features = ['title', 'appId', 'description', 'inAppProductPrice', 'developerAddress', 'released']
+    play_table = pd.DataFrame(play_info, index=[0])
+    play_table.drop(columns=filter_features, inplace=True)
+    return [play_table.melt(var_name="Feature", value_name="Value").to_dict('records')]
