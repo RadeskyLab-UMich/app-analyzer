@@ -1,3 +1,4 @@
+import time
 import dash
 from dash import html, dcc, dash_table as dt
 import dash_bootstrap_components as dbc
@@ -8,9 +9,10 @@ from utils import *
 dash.register_page(__name__)
 
 features = ['title', 'appId', 'realInstalls', 'score', 'description', 'ratings', 'reviews', 'histogram', 'price', 'free', 'currency', 'sale',
-'offersIAP', 'inAppProductPrice', 'developerAddress', 'genreId', 'contentRating', 'adSupported', 'containsAds', 'released']
+'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released']
 
-features_derived = ['reviewsStd', 'reviewsSkew', 'descriptionSentiment', 'reviewsSentiment', 'developerCountry', 'releasedYear']
+features_derived = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar', 
+'developerNApps', 'developerAppAgeMedian', 'developerCountry', 'releasedYear']
 
 filters = dbc.Row(
     [
@@ -126,15 +128,19 @@ def update_play_info(set_progress, click, apps):
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
     for idx, app_id in enumerate(apps_ls):
+        print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
         set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
         try:
             app_info = Play(app_id=app_id.strip())
             play_details = app_info.get_details()
+            time.sleep(0.5)
             play_reviews = app_info.get_reviews(sort='relevance')
             play_info = play_features(play_details, play_reviews)
             full_play_ls.append(play_info)
-        except Exception:
+        except Exception as e:
+            print(e)
             not_found.append(app_id)
+        time.sleep(0.5)
     
     return full_play_ls
 
