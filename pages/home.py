@@ -87,12 +87,17 @@ play_tab = dbc.Row(
                                 html.I(className="fa-solid fa-circle-info"),
                                 html.P(
                                     '''offersIAP: Offers in-app purchases\
-                                    \nReviewsStd: The standard deviation of user ratings\
-                                    \nReviewsSkew: The skewness of user ratings (negative value - skewed towards positive ratings)\
+                                    \nRatingsStd: The standard deviation of user ratings\
+                                    \nRatingsSkew: The skewness of user ratings (negative value - skewed towards positive ratings)\
                                     \ndescriptionSentiment: The app description's compound sentiment score, ranges from -1 to 1\
                                     \nreviewsSentiment: The average compound sentiment score of the app's reviews, ranges from -1 to 1\
+                                    \ndescriptionReadability: The estimated school grade level required to understand the text\
+                                    \ndescriptionGrammar: The grammatical correctness rate of the app description, with 100 being the best\
                                     \nIAPMin: The minimum single-item price for in-app purchases\
-                                    \nIAPMax: The maximum single-item price for in-app purchases''',
+                                    \nIAPMax: The maximum single-item price for in-app purchases\
+                                    \ndeveloperCountry: The Alpha-2 (two-letter) code of the developer's country\
+                                    \ndeveloperNApps: The number of unique apps the developer has on Play Store\
+                                    \ndeveloperAppAgeMedian: The median age (years) of apps in the developer's portfolio''',
                                     className="info"
                                 ),
                                 " Glossary"
@@ -218,7 +223,8 @@ def update_meta(data):
 )
 def update_tables(details, reviews):
     play_info = play_features(details, reviews)
-    filter_features = ['title', 'appId', 'description', 'inAppProductPrice', 'developerAddress', 'released']
+    filter_features = ['title', 'appId', 'description', 'inAppProductPrice', 'developerId',
+                       'developerAddress', 'genre', 'contentRatingDescription', 'released']
     play_table = pd.DataFrame(play_info, index=[0])
     play_table.drop(columns=filter_features, inplace=True)
     return [play_table.melt(var_name="Feature", value_name="Value").to_dict('records')]
