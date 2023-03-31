@@ -23,4 +23,5 @@ __pycache__/
 *.txt
 cache/
 .DS_Store
+*.ipynb
 
