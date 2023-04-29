@@ -2,6 +2,7 @@ import dash
 from dash import html, dcc, dash_table as dt
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
+import plotly.graph_objects as go
 from api import Play, Apple
 from utils import *
 
@@ -49,7 +50,7 @@ play_tab = dbc.Row(
         dbc.Col(
             [
                 html.Br(),
-                dbc.Spinner(
+                dcc.Loading(
                     [
                         dbc.Row(
                             [
@@ -77,7 +78,8 @@ play_tab = dbc.Row(
                             cell_selectable=False,
                             style_table={"marginBotton": "1rem"}
                         )
-                    ]
+                    ],
+                    type="circle", color="#158cba"
                 ),
                 html.Br(),
                 dbc.Row(
@@ -90,9 +92,9 @@ play_tab = dbc.Row(
                                     \nRatingsStd: The standard deviation of user ratings\
                                     \nRatingsSkew: The skewness of user ratings (negative value - skewed towards positive ratings)\
                                     \ndescriptionSentiment: The app description's compound sentiment score, ranges from -1 to 1\
-                                    \nreviewsSentiment: The average compound sentiment score of the app's reviews, ranges from -1 to 1\
+                                    \nreviewsSentiment: The average compound sentiment score of the reviews, ranges from -1 to 1\
                                     \ndescriptionReadability: The estimated school grade level required to understand the text\
-                                    \ndescriptionGrammar: The grammatical correctness rate of the app description, with 100 being the best\
+                                    \ndescriptionGrammar: The grammatical correctness rate of the app description, up to 100\
                                     \nIAPMin: The minimum single-item price for in-app purchases\
                                     \nIAPMax: The maximum single-item price for in-app purchases\
                                     \ndeveloperCountry: The Alpha-2 (two-letter) code of the developer's country\
@@ -111,10 +113,19 @@ play_tab = dbc.Row(
             width=6
         ),
         dbc.Col(
-            dbc.Spinner(
-                dt.DataTable(
-                    id='play-reviews'
-                )
+            dcc.Loading(
+                [
+                    dbc.Row(
+                        [
+                            dcc.Graph(id="play-educational"),
+                            dcc.Graph(id="play-violent"),
+                        ]
+                    ),
+                    dt.DataTable(
+                        id='play-reviews'
+                    )
+                ],
+                type="circle", color="#158cba"
             ),
             width=6
         )
@@ -125,18 +136,20 @@ play_tab = dbc.Row(
 apple_tab = dbc.Row(
     [
         dbc.Col(
-            dbc.Spinner(
+            dcc.Loading(
                 dt.DataTable(
                     id='apple-details'
-                )
+                ),
+                type="circle", color="#158cba"
             ),
             width=6
         ),
         dbc.Col(
-            dbc.Spinner(
+            dcc.Loading(
                 dt.DataTable(
                     id='apple-reviews'
-                )
+                ),
+                type="circle", color="#158cba"
             ),
             width=6
         )
@@ -228,3 +241,18 @@ def update_tables(details, reviews):
     play_table = pd.DataFrame(play_info, index=[0])
     play_table.drop(columns=filter_features, inplace=True)
     return [play_table.melt(var_name="Feature", value_name="Value").to_dict('records')]
+
+# @dash.callback(
+#     [
+#         Output('play-educational', 'figure'),
+#         Output('play-violent', 'figure'),
+#     ],
+#     [
+#         Input('details-temp', 'data'),
+#         Input('reviews-temp', 'data')
+#     ]
+# )
+# def update_scores():
+#     fig_e = go.Figure(data=[go.Pie(hole=.3)])
+#     fig_v = go.Figure(data=[go.Pie(hole=.3)])
+#     return [fig_e, fig_v]
