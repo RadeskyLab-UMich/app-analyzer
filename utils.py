@@ -17,14 +17,18 @@ nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('vader_lexicon')
 
-# from arcgis.gis import GIS
-# from arcgis.geocoding import geocode
 import googlemaps
 from itunes_app_scraper.scraper import AppStoreScraper
 from bs4 import BeautifulSoup
 from api import Play, Apple
+from joblib import load
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
 
 def play_features(data, reviews=None):
+    '''
+    Returns full 
+    '''
     features = ['title', 'appId', 'realInstalls', 'score', 'description', 'ratings', 'reviews', 'histogram', 'price', 'free', 'currency', 'sale',
     'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released']
     data_filtered = {k: data[k] for k in data.keys() & set(features)}
@@ -60,7 +64,11 @@ def play_features(data, reviews=None):
     return data_filtered
 
 def apple_features(data):
-    pass
+    features = ['trackName', 'trackId', 'bundleId', 'isGameCenterEnabled', 'advisories', 'features', 'kind', 'averageUserRating', 'description', 'contentAdvisoryRating',
+                'releaseDate', 'genreIds', 'primaryGenreId', 'currency', 'artistId', 'price', 'userRatingCount']
+    data_filtered = {k: data[k] for k in data.keys() & set(features)}
+
+    return data_filtered
 
 def process_text(text):
     stop = stopwords.words('english') + list(string.punctuation)
@@ -178,3 +186,21 @@ def play_features_to_csv(df):
 
 def apple_features_to_csv(df):
     pass
+
+def generate_predictions(data, target='educational'):
+    target_ls = ['educational', 'violent']
+    num_columns = ['realInstalls', 'price', 'ratings', 'reviews', 'score', 'ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 
+                   'descriptionReadability', 'descriptionGrammar', 'developerNApps', 'developerAppAgeMedian', 'releasedYears']
+    scaler = StandardScaler()
+    data[num_columns] = scaler.fit_transform(data[num_columns])
+    data_processed = pd.get_dummies(data, drop_first=True)
+
+    if target == 'educational':
+        model = load()
+    elif target == 'violent':
+        model = load()
+    else:
+        raise ValueError("Invalid target. Expected one of: %s." % target_ls)
+    pred = model.predict_proba(data_processed)
+    
+    return pred
