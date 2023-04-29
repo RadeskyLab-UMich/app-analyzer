@@ -51,3 +51,12 @@ h6 {
     color: white;
     text-decoration: none;
 }
+
+.nav-tabs, .tab-content {
+    width: 90%;
+    margin: auto;
+}
+
+.mantine-Checkbox-label {
+    padding-left: 0.4rem;
+}
