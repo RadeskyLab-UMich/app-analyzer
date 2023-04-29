@@ -2,6 +2,7 @@ import time
 import dash
 from dash import html, dcc, dash_table as dt
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 from dash.dependencies import Input, Output, State
 from api import Play, Apple
 from utils import *
@@ -17,11 +18,12 @@ features_derived = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'review
 filters = dbc.Row(
     [
         dbc.Col(
-            dcc.Dropdown(features, value=['title', 'appId'], persistence=True, multi=True, placeholder="Select base features", id="filters-base")
+            dcc.Dropdown(sorted(features), value=['title', 'appId'], persistence=True, multi=True, placeholder="Select base features", id="filters-base")
         ),
         dbc.Col(
-            dcc.Dropdown(features_derived, value=[], persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
-        )
+            dcc.Dropdown(sorted(features_derived), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
+        ),
+        dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
     ],
     class_name="g-2 ms-auto flex-wrap mx-auto",
     align="center",
@@ -108,7 +110,10 @@ layout = dbc.Container(
 
 @dash.callback(
     Output('dl-temp-play', 'data'),
+    # [
     Input('confirm-button-play', 'n_clicks'),
+        # Input('predict-checkbox', 'checked'),
+    # ],
     State('dl-input-play', 'value'),
     running=[
         (Output("dl-button-play", "disabled"), True, False),
@@ -136,6 +141,8 @@ def update_play_info(set_progress, click, apps):
             time.sleep(0.5)
             play_reviews = app_info.get_reviews(sort='relevance')
             play_info = play_features(play_details, play_reviews)
+            # if predict:
+            #     pass
             full_play_ls.append(play_info)
         except Exception as e:
             print(e)
