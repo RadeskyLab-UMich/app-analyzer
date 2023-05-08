@@ -23,7 +23,7 @@ filters = dbc.Row(
         dbc.Col(
             dcc.Dropdown(sorted(features_derived), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
         ),
-        dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
+        # dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
     ],
     class_name="g-2 ms-auto flex-wrap mx-auto",
     align="center",
