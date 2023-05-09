@@ -23,7 +23,7 @@ filters = dbc.Row(
         dbc.Col(
             dcc.Dropdown(sorted(features_derived), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
         ),
-        dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
+        # dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
     ],
     class_name="g-2 ms-auto flex-wrap mx-auto",
     align="center",
@@ -112,7 +112,7 @@ layout = dbc.Container(
     Output('dl-temp-play', 'data'),
     [
         Input('confirm-button-play', 'n_clicks'),
-        Input('predict-checkbox', 'checked'),
+        # Input('predict-checkbox', 'checked'),
     ],
     State('dl-input-play', 'value'),
     running=[
@@ -127,7 +127,7 @@ layout = dbc.Container(
     prevent_initial_call=True,
     background=True
 )
-def update_play_info(set_progress, click, predict, apps):
+def update_play_info(set_progress, click, apps):
     full_play_ls = []
     not_found = []
     apps_ls = apps.split('\n')
