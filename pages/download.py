@@ -58,7 +58,7 @@ play_tab = dbc.Container(
             class_name="g-2",
             align='center'
         ),
-        dcc.Store(id="dl-temp-play")
+        dcc.Store(id="dl-temp-play", storage_type='session')
     ]
 )
 
@@ -89,7 +89,7 @@ apple_tab = dbc.Container(
             ],
             class_name="g-1"
         ),
-        dcc.Store(id="dl-temp-apple")
+        dcc.Store(id="dl-temp-apple", storage_type='session')
     ]
 ) 
 
