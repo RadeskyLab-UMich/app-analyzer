@@ -36,9 +36,9 @@ search_bar = dbc.Row(
             ),
             width="auto",
         ),
-        dcc.Store(id='search-temp'),
-        dcc.Store(id='details-temp'),
-        dcc.Store(id='reviews-temp')
+        dcc.Store(id='search-temp', storage_type='session'),
+        dcc.Store(id='details-temp', storage_type='session'),
+        dcc.Store(id='reviews-temp', storage_type='session')
     ],
     class_name="g-0 ms-auto flex-wrap mx-auto",
     align="center",
@@ -232,7 +232,8 @@ def update_meta(data):
     [
         Input('details-temp', 'data'),
         Input('reviews-temp', 'data')
-    ]
+    ],
+    background=True
 )
 def update_tables(details, reviews):
     play_info = play_features(details, reviews)

@@ -44,6 +44,11 @@ header = dbc.Navbar(
                         className="nav-link"
                     ),
                     dbc.Col(
+                        dcc.Link('YouTube', href=dash.page_registry['pages.youtube']['path']),
+                        width="auto",
+                        className="nav-link"
+                    ),
+                    dbc.Col(
                         html.A('Code', href="https://github.com/andy-techen/app-analyzer", target="_blank"),
                         width="auto",
                         className="nav-link"
@@ -67,4 +72,4 @@ header = dbc.Navbar(
 app.layout = html.Div([header, dash.page_container])
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8020)
+    app.run_server(debug=True, port=8020, threaded=True)
