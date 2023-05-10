@@ -25,6 +25,9 @@ from joblib import load
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 
+from dotenv import load_dotenv
+load_dotenv()
+
 def play_features(data, reviews=None):
     '''
     Returns full 
