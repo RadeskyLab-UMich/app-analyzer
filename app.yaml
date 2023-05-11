@@ -1,2 +1,4 @@
 runtime: python310
 entrypoint: gunicorn -b :$PORT main:server
+includes:
+  - env_variables.yaml
