@@ -162,7 +162,14 @@ def update_play_info(set_progress, click, apps):
     prevent_initial_call=True
 )
 def play_download(click, data, base, derived):
-    filters = base + derived
+    if base is None and derived is None:
+        filters = []
+    elif base is None:
+        filters = derived
+    elif derived is None:
+        filters = base
+    else:
+        filters = base + derived
     df = pd.DataFrame(data)
     df.drop(columns=df.columns.difference(filters), inplace=True)
 
