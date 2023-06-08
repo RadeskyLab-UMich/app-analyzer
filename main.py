@@ -1,5 +1,4 @@
-import dash
-from dash import DiskcacheManager, Dash, dcc, html, dash_table as dt
+from dash import DiskcacheManager, Dash, dcc, html, dash_table as dt, page_registry, page_container
 import dash_bootstrap_components as dbc
 
 import diskcache
@@ -33,18 +32,18 @@ header = dbc.Navbar(
                     align="center",
                     class_name="g-0",
                 ),
-                href=dash.page_registry['pages.home']['path'],
+                href=page_registry['pages.home']['path'],
                 style={"textDecoration": "none", 'fontWeight':'bold'},
             ),
             dbc.Row(
                 [
                     dbc.Col(
-                        dcc.Link('Download', href=dash.page_registry['pages.download']['path']),
+                        dcc.Link('Download', href=page_registry['pages.download']['path']),
                         width="auto",
                         className="nav-link"
                     ),
                     dbc.Col(
-                        dcc.Link('YouTube', href=dash.page_registry['pages.youtube']['path']),
+                        dcc.Link('YouTube', href=page_registry['pages.youtube']['path']),
                         width="auto",
                         className="nav-link"
                     ),
@@ -69,7 +68,7 @@ header = dbc.Navbar(
     dark=True,
 )
 
-app.layout = html.Div([header, dash.page_container])
+app.layout = html.Div([header, page_container])
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8020, threaded=True)
+    app.run(host='0.0.0.0', debug=True, port=8080, threaded=True)
