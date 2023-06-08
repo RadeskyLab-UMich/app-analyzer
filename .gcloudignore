@@ -19,7 +19,7 @@ __pycache__/
 /setup.cfg
 .env
 __pycache__/
-*.csv
+data/
 *.txt
 cache/
 .DS_Store
