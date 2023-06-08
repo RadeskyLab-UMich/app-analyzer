@@ -1,6 +1,6 @@
 .env
 __pycache__/
-*.csv
+data/
 *.txt
 cache/
 .DS_Store
