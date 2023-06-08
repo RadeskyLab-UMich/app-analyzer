@@ -20,7 +20,7 @@ __pycache__/
 .env
 __pycache__/
 data/
-cache/
+# cache/
 .DS_Store
 *.ipynb
 
