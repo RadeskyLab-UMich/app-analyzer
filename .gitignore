@@ -1,6 +1,6 @@
 .env
 __pycache__/
 data/
-cache/
+tmp/
 .DS_Store
 env_variables.yaml

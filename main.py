@@ -2,7 +2,7 @@ from dash import DiskcacheManager, Dash, dcc, html, dash_table as dt, page_regis
 import dash_bootstrap_components as dbc
 
 import diskcache
-cache = diskcache.Cache("./cache")
+cache = diskcache.Cache("./tmp")
 bcm = DiskcacheManager(cache)
 
 THEME = dbc.themes.LUMEN
