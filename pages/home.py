@@ -73,7 +73,7 @@ play_tab = dbc.Row(
                             ],
                             style_as_list_view=True,
                             style_cell={'fontSize': '1rem', 'textAlign': 'left', 'paddingRight': '2rem', 'fontFamily': "Helvetica Neue"},
-                            style_header={'fontWeight': 'bold', 'backgroundColor': '#999999', 'color': 'white'},
+                            style_header={'fontWeight': 'bold', 'backgroundColor': '#808080', 'color': 'white'},
                             fill_width=False,
                             cell_selectable=False,
                             style_table={"marginBotton": "1rem"}
@@ -113,20 +113,23 @@ play_tab = dbc.Row(
             width=6
         ),
         dbc.Col(
-            dcc.Loading(
-                [
-                    dbc.Row(
-                        [
-                            dcc.Graph(id="play-educational"),
-                            dcc.Graph(id="play-violent"),
-                        ]
-                    ),
-                    dt.DataTable(
-                        id='play-reviews'
-                    )
-                ],
-                type="circle", color="#158cba"
-            ),
+            [
+                html.Br(),
+                dcc.Loading(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(dcc.Graph(id="play-educational")),
+                                dbc.Col(dcc.Graph(id="play-violent")),
+                            ]
+                        ),
+                        dt.DataTable(
+                            id='play-reviews'
+                        )
+                    ],
+                    type="circle", color="#158cba"
+                ),
+            ],
             width=6
         )
     ],
@@ -243,17 +246,52 @@ def update_tables(details, reviews):
     play_table.drop(columns=filter_features, inplace=True)
     return [play_table.melt(var_name="Feature", value_name="Value").to_dict('records')]
 
-# @dash.callback(
-#     [
-#         Output('play-educational', 'figure'),
-#         Output('play-violent', 'figure'),
-#     ],
-#     [
-#         Input('details-temp', 'data'),
-#         Input('reviews-temp', 'data')
-#     ]
-# )
-# def update_scores():
-#     fig_e = go.Figure(data=[go.Pie(hole=.3)])
-#     fig_v = go.Figure(data=[go.Pie(hole=.3)])
-#     return [fig_e, fig_v]
+@dash.callback(
+    [
+        Output('play-educational', 'figure'),
+        Output('play-violent', 'figure'),
+    ],
+    [
+        Input('details-temp', 'data'),
+        Input('reviews-temp', 'data')
+    ]
+)
+def update_scores(details, reviews):
+    play_info = play_features(details, reviews)
+    pred_e = generate_predictions(play_info, 'educational')
+    pred_v = generate_predictions(play_info, 'violent')
+    fig_e = go.Figure(
+        data=[
+            go.Pie(
+                values=[pred_e, 1-pred_e],
+                hole=.3, hoverinfo="skip",
+                marker_colors=['#158cba', '#d1d1d1'],
+            )
+        ], layout_showlegend=False)
+    fig_e.update_layout(
+        autosize=False,
+        width=250,
+        height=250,
+        margin=dict(l=10, r=10, t=40, b=10),
+        title_text="Educational",
+        title_x=0.5,
+        font_color="black",
+    )
+    fig_v = go.Figure(
+        data=[
+            go.Pie(
+                values=[pred_v, 1-pred_v],
+                hole=.3, hoverinfo="skip",
+                marker_colors=['#158cba', '#d1d1d1'],
+            )
+        ], layout_showlegend=False)
+    fig_v.update_layout(
+        autosize=False,
+        width=250,
+        height=250,
+        margin=dict(l=10, r=10, t=40, b=10),
+        title_text="Violent",
+        title_x=0.5,
+        font_color="black",
+    )
+    return [fig_e, fig_v]
