@@ -9,7 +9,7 @@ from utils import *
 
 dash.register_page(__name__)
 
-features = ['title', 'appId', 'realInstalls', 'score', 'description', 'ratings', 'reviews', 'histogram', 'price', 'free', 'currency', 'sale',
+features = ['title', 'appId', 'realInstalls', 'score', 'description', 'ratings', 'reviews', 'price', 'free', 'currency', 'sale',
 'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released']
 
 features_derived = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar', 
@@ -23,7 +23,7 @@ filters = dbc.Row(
         dbc.Col(
             dcc.Dropdown(sorted(features_derived), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
         ),
-        # dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
+        dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
     ],
     class_name="g-2 ms-auto flex-wrap mx-auto",
     align="center",
@@ -112,9 +112,11 @@ layout = dbc.Container(
     Output('dl-temp-play', 'data'),
     [
         Input('confirm-button-play', 'n_clicks'),
-        # Input('predict-checkbox', 'checked'),
     ],
-    State('dl-input-play', 'value'),
+    [
+        State('predict-checkbox', 'checked'),
+        State('dl-input-play', 'value'),
+    ],
     running=[
         (Output("dl-button-play", "disabled"), True, False),
         (Output("dl-play-progress", "animated"), True, False),
@@ -127,7 +129,7 @@ layout = dbc.Container(
     prevent_initial_call=True,
     background=True
 )
-def update_play_info(set_progress, click, apps):
+def update_play_info(set_progress, click, predict, apps):
     full_play_ls = []
     not_found = []
     apps_ls = apps.split('\n')
@@ -141,8 +143,11 @@ def update_play_info(set_progress, click, apps):
             time.sleep(0.5)
             play_reviews = app_info.get_reviews(sort='relevance')
             play_info = play_features(play_details, play_reviews)
-            # if predict:
-            #     pass
+            if predict:
+                pred_e = generate_predictions(play_info, 'educational')
+                pred_v = generate_predictions(play_info, 'violent')
+                play_info['educational_proba'] = pred_e
+                play_info['violent_proba'] = pred_v
             full_play_ls.append(play_info)
         except Exception as e:
             print(e)
@@ -156,12 +161,13 @@ def update_play_info(set_progress, click, apps):
     Input('dl-button-play', 'n_clicks'),
     [
         State('dl-temp-play', 'data'),
+        State('predict-checkbox', 'checked'),
         State('filters-base', 'value'),
         State('filters-derived', 'value')
     ],
     prevent_initial_call=True
 )
-def play_download(click, data, base, derived):
+def play_download(click, data, predict, base, derived):
     if base is None and derived is None:
         filters = []
     elif base is None:
@@ -170,7 +176,11 @@ def play_download(click, data, base, derived):
         filters = base
     else:
         filters = base + derived
+    
+    if predict:
+        filters = filters + ['educational_proba', 'violent_proba']
+
     df = pd.DataFrame(data)
     df.drop(columns=df.columns.difference(filters), inplace=True)
-
+    
     return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
