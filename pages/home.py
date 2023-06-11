@@ -236,7 +236,7 @@ def update_meta(data):
         Input('details-temp', 'data'),
         Input('reviews-temp', 'data')
     ],
-    background=True
+    # background=True
 )
 def update_tables(details, reviews):
     play_info = play_features(details, reviews)
