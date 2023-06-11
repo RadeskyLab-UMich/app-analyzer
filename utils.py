@@ -30,7 +30,14 @@ load_dotenv()
 
 def play_features(data, reviews=None):
     '''
-    Returns full 
+    Returns the base and derived features of a Play Store app in a dictionary.
+    
+    Parameters
+    ----------
+    data: dict
+        Play Store data retrieved with the `get_details` method.
+    reviews: list (optional)
+        List of Play Store reviews retrieved with the `get_reviews` method.
     '''
     features = ['title', 'appId', 'realInstalls', 'score', 'description', 'ratings', 'reviews', 'histogram', 'price', 'free', 'currency', 'sale',
     'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released']
@@ -61,19 +68,26 @@ def play_features(data, reviews=None):
     data_filtered['developerCountry'] = process_address(data_filtered['developerAddress'])
     if data_filtered['released']:
         data_filtered['releasedYear'] = int(data_filtered['released'][-4:])
+        data_filtered['releasedYears'] = datetime.now().year - data_filtered['releasedYear']
 
     # drop unused features
     data_filtered.pop('histogram')
     return data_filtered
 
-def apple_features(data):
-    features = ['trackName', 'trackId', 'bundleId', 'isGameCenterEnabled', 'advisories', 'features', 'kind', 'averageUserRating', 'description', 'contentAdvisoryRating',
-                'releaseDate', 'genreIds', 'primaryGenreId', 'currency', 'artistId', 'price', 'userRatingCount']
-    data_filtered = {k: data[k] for k in data.keys() & set(features)}
+# def apple_features(data):
+#     '''
+#     Returns the base and derived features of a App Store app in a dictionary.
+#     '''
+#     features = ['trackName', 'trackId', 'bundleId', 'isGameCenterEnabled', 'advisories', 'features', 'kind', 'averageUserRating', 'description', 'contentAdvisoryRating',
+#                 'releaseDate', 'genres', 'genreIds', 'primaryGenreName', 'primaryGenreId', 'currency', 'artistId', 'price', 'userRatingCount']
+#     data_filtered = {k: data[k] for k in data.keys() & set(features)}
 
-    return data_filtered
+#     return data_filtered
 
 def process_text(text):
+    '''
+    Tokenizes and cleans text for further analyses.
+    '''
     stop = stopwords.words('english') + list(string.punctuation)
     text_tokenized = word_tokenize(re.sub(r'\d+', '', text))
     text_ls = [txt.lower() for txt in text_tokenized if txt.lower() not in stop]
@@ -81,6 +95,9 @@ def process_text(text):
     return processed_text
 
 def process_iap(data):
+    '''
+    Returns the maximum and minimum in-app purchase prices.
+    '''
     if data['inAppProductPrice'] is not None:
         data['IAPMin'] = re.search(r'\$([^ ]+)', data['inAppProductPrice']).group(1)
         try:
@@ -93,6 +110,9 @@ def process_iap(data):
     return data
 
 def process_address(address):
+    '''
+    Retrieves the country code of a given address using Google's Geocoding API.
+    '''
     if address is None:
         return "Unlisted"
     else:
@@ -100,7 +120,6 @@ def process_address(address):
         gmaps = googlemaps.Client(key=os.getenv('GMAP_KEY'))
         address_processed = re.sub('\n', ' ', address)
         location = gmaps.geocode(address_processed)
-        # location = geocode(address_processed)
         if len(location) == 0:
             return "Unlisted"
         else:
@@ -108,6 +127,9 @@ def process_address(address):
             return country[0]
 
 def process_reviews_sentiment(reviews):
+    '''
+    Returns the average review sentiment of a given list of reviews obtained with the `get_reviews` method.
+    '''
     reviews_sentiment = []
     sia = SentimentIntensityAnalyzer()
     for review in reviews:
@@ -119,12 +141,26 @@ def process_reviews_sentiment(reviews):
     return round(np.mean(reviews_sentiment), 4)
 
 def process_grammar(text):
+    '''
+    Returns the grammatical error rate of a given piece of text.
+    '''
     tool = language_tool_python.LanguageToolPublicAPI('en-US')
     matches = tool.check(text)
     tool.close()
     return round((len(text) - len(matches))/len(text) * 100, 2)
 
 def process_developer(id, store="play"):
+    '''
+    Returns the base and derived features of a App Store app in a dictionary.
+
+    Parameters
+    ----------
+    id: int
+        Developer ID.
+    store: str (optional)
+        Store to fetch data from ('play': Play Store; 'apple': Apple App Store).
+        Defaults to 'play'.
+    '''
     store_ls = ['play', 'apple']
     if store == "play":
         base_url = "https://play.google.com/store/apps/"
@@ -165,45 +201,65 @@ def process_developer(id, store="play"):
     else:
         raise ValueError("Invalid store type. Expected one of: %s." % store_ls)
 
-def play_features_to_csv(df):
-    for idx, (id, title) in enumerate(zip(df['app_fullname'], df['app_title'])):
-        if pd.notnull(id):
-            try:
-                app_info = Play(app_id=id)
-                play_details = app_info.get_details()
-            except:
-                try:
-                    app_info = Play(search=title)
-                    play_details = app_info.get_details()
-                except:
-                    print(f"{id} not found.")
-        else:
-            try:
-                app_info = Play(search=title)
-                play_details = app_info.get_details()
-            except:
-                print(f"{id} not found.")
-        play_reviews = app_info.get_reviews(sort='relevance')
-        play_info = play_features(play_details, play_reviews)
-        print(play_info)
+# def play_features_to_csv(df):
+#     '''
+#     Generates a csv with Play Store features given a dataframe of apps.
+#     '''
+#     for idx, (id, title) in enumerate(zip(df['app_fullname'], df['app_title'])):
+#         if pd.notnull(id):
+#             try:
+#                 app_info = Play(app_id=id)
+#                 play_details = app_info.get_details()
+#             except:
+#                 try:
+#                     app_info = Play(search=title)
+#                     play_details = app_info.get_details()
+#                 except:
+#                     print(f"{id} not found.")
+#         else:
+#             try:
+#                 app_info = Play(search=title)
+#                 play_details = app_info.get_details()
+#             except:
+#                 print(f"{id} not found.")
+#         play_reviews = app_info.get_reviews(sort='relevance')
+#         play_info = play_features(play_details, play_reviews)
+#         print(play_info)
 
-def apple_features_to_csv(df):
-    pass
+# def apple_features_to_csv(df):
+#     pass
 
 def generate_predictions(data, target='educational'):
+    '''
+    Given a set of features obtained with the `play_features` function, generates the
+    predicted probability that the app fits the target label.
+    
+    Parameters
+    ----------
+    data: dict
+        Feature dictionary generated using the `play_features` function.
+    target: str (optional)
+        Predict whether or not the given app is 'educational' or 'violent'.
+    '''
     target_ls = ['educational', 'violent']
-    num_columns = ['realInstalls', 'price', 'ratings', 'reviews', 'score', 'ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 
-                   'descriptionReadability', 'descriptionGrammar', 'developerNApps', 'developerAppAgeMedian', 'releasedYears']
+    num_columns = ['realInstalls', 'price', 'ratings', 'reviews', 'score', 'ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar', 'developerNApps', 'developerAppAgeMedian', 'releasedYears']
+    cat_columns = ['genreId', 'contentRating'] # , 'developerCountry'
+    bool_columns = ['offersIAP', 'sale', 'containsAds', 'free', 'adSupported']
+    data_filtered = {k: v for k, v in data.items() if k in num_columns + cat_columns + bool_columns}
     scaler = StandardScaler()
-    data[num_columns] = scaler.fit_transform(data[num_columns])
-    data_processed = pd.get_dummies(data, drop_first=True)
+    data_processed = pd.DataFrame(data_filtered.copy(), index=[0])
+    data_processed[num_columns] = scaler.fit_transform(data_processed[num_columns])
+    data_processed = pd.get_dummies(data_processed)
 
     if target == 'educational':
-        model = load()
+        model = load('models/rf_e_0607.joblib')
+        model_features = pd.read_csv('models/features_educational.csv')
     elif target == 'violent':
-        model = load()
+        model = load('models/rf_v_0607.joblib')
+        model_features = pd.read_csv('models/features_violent.csv')
     else:
         raise ValueError("Invalid target. Expected one of: %s." % target_ls)
-    pred = model.predict_proba(data_processed)
+    model_features, data_processed = model_features.align(data_processed, join='left', axis=1, fill_value=0)
+    pred = model.predict_proba(data_processed)[:,1][0]
     
     return pred
