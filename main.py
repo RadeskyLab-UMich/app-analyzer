@@ -48,7 +48,7 @@ header = dbc.Navbar(
                         className="nav-link"
                     ),
                     dbc.Col(
-                        html.A('Code', href="https://github.com/andy-techen/app-analyzer", target="_blank"),
+                        html.A('Code', href="https://github.com/RadeskyLab-UMich/app-analyzer", target="_blank"),
                         width="auto",
                         className="nav-link"
                     ),
