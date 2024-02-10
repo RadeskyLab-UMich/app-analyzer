@@ -39,7 +39,7 @@ def play_features(data, reviews=None):
     reviews: list (optional)
         List of Play Store reviews retrieved with the `get_reviews` method.
     '''
-    features = ['title', 'appId', 'realInstalls', 'score', 'description', 'ratings', 'reviews', 'histogram', 'price', 'free', 'currency', 'sale',
+    features = ['title', 'appId', 'realInstalls', 'score', 'developer', 'version', 'description', 'ratings', 'reviews', 'histogram', 'price', 'free', 'currency', 'sale',
     'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released']
     data_filtered = {k: data[k] for k in data.keys() & set(features)}
 
