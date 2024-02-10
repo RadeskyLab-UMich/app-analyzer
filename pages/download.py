@@ -9,7 +9,7 @@ from utils import *
 
 dash.register_page(__name__)
 
-features = ['title', 'appId', 'realInstalls', 'score', 'description', 'ratings', 'reviews', 'price', 'free', 'currency', 'sale',
+features = ['title', 'appId', 'realInstalls', 'score', 'developer', 'version', 'description', 'ratings', 'reviews', 'price', 'free', 'currency', 'sale',
 'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released']
 
 features_derived = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar', 
