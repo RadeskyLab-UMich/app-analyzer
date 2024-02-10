@@ -20,3 +20,4 @@ scipy==1.9.3
 textstat==0.7.3
 multiprocess>=0.70.12
 psutil>=5.8.0
+aiohttp-socks==0.8.4
