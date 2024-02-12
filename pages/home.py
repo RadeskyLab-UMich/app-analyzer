@@ -195,12 +195,15 @@ def update_term(click, term):
         Output('details-temp', 'data'),
         Output('reviews-temp', 'data')
     ],
-    Input('search-type', 'value')
-    Input('search-term', 'data')
+    [
+        Input('search-type', 'value'),
+        Input('search-term', 'data')
+    ]
 )
 def fetch_info(search_type, term):
     if "Play" in search_type:
-        #app_id = term.split("play:")[1].strip()
+        app_id = term
+        # app_id = term.split("play:")[1].strip()
         try:
             app = Play(app_id=app_id)
             play_details = app.get_details()
