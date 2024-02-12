@@ -27,7 +27,10 @@ search_bar = dbc.Row(
             width=1
         ),
         dbc.Col(
-            dbc.Input(id="search-term", type="search", placeholder="Enter an app ID or keywords", value="play: com.mojang.minecraftpe"),
+            dcc.Dropdown(["Play", "Apple"], value=["Play"], id='search-type')
+        ),
+        dbc.Col(
+            dbc.Input(id="search-term", type="search", placeholder="Enter an app ID or keywords", value="com.mojang.minecraftpe"),
         ),
         dbc.Col(
             dbc.Button(
@@ -192,11 +195,12 @@ def update_term(click, term):
         Output('details-temp', 'data'),
         Output('reviews-temp', 'data')
     ],
-    Input('search-temp', 'data')
+    Input('search-type', 'value')
+    Input('search-term', 'data')
 )
-def fetch_info(term):
-    if "play: " in term:
-        app_id = term.split("play:")[1].strip()
+def fetch_info(search_type, term):
+    if "Play" in search_type:
+        #app_id = term.split("play:")[1].strip()
         try:
             app = Play(app_id=app_id)
             play_details = app.get_details()
@@ -205,8 +209,9 @@ def fetch_info(term):
             app = Play(search=app_id)
             play_details = app.get_details()
             play_reviews = app.get_reviews(sort='relevance')
-    elif "apple: " in term:
-        app_id = term.split("play:")[1].strip()
+    elif "Apple" in search_type:
+        #app_id = term.split("play:")[1].strip()
+        pass
     else:
         app = Play(search=term)
         play_details = app.get_details()
