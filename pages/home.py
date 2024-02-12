@@ -209,7 +209,7 @@ def fetch_info(search_type, term):
             app = Play(search=app_id)
             play_details = app.get_details()
             play_reviews = app.get_reviews(sort='relevance')
-    elif "Play" in search_type:
+    elif "Apple" in search_type:
         #app_id = term.split("play:")[1].strip()
         pass
     else:
