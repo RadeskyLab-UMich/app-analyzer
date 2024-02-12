@@ -27,7 +27,7 @@ search_bar = dbc.Row(
             width=1
         ),
         dbc.Col(
-            dcc.Dropdown(["Play", "Apple"], value=["Play"], id='search-type')
+            dcc.Dropdown(["Play", "Apple"], value="Play", id='search-type')
         ),
         dbc.Col(
             dbc.Input(id="search-term", type="search", placeholder="Enter an app ID or keywords", value="com.mojang.minecraftpe"),
@@ -202,23 +202,23 @@ def update_term(click, term):
 )
 def fetch_info(search_type, term):
     if "Play" in search_type:
-        app_id = term
+        # app_id = term
         # app_id = term.split("play:")[1].strip()
         try:
-            app = Play(app_id=app_id)
+            app = Play(app_id=term)
             play_details = app.get_details()
             play_reviews = app.get_reviews(sort='relevance')
         except:
-            app = Play(search=app_id)
+            app = Play(search=term)
             play_details = app.get_details()
             play_reviews = app.get_reviews(sort='relevance')
     elif "Apple" in search_type:
-        #app_id = term.split("play:")[1].strip()
+        # app_id = term.split("play:")[1].strip()
         pass
-    else:
-        app = Play(search=term)
-        play_details = app.get_details()
-        play_reviews = app.get_reviews(sort='relevance')
+    # else:
+        # app = Play(search=term)
+        # play_details = app.get_details()
+        # play_reviews = app.get_reviews(sort='relevance')
     return [play_details, play_reviews]
 
 @dash.callback(
