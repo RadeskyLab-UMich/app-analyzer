@@ -195,7 +195,7 @@ def update_term(click, term):
         Output('details-temp', 'data'),
         Output('reviews-temp', 'data')
     ],
-    Input('search-term', 'data'),
+    Input('search-temp', 'data'),
     State('search-type', 'value')
 )
 def fetch_info(term, search_type):
