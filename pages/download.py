@@ -168,12 +168,12 @@ def update_play_info(set_progress, click, predict, apps):
     prevent_initial_call=True
 )
 def play_download(click, data, predict, base, derived):
-    if base is None and derived is None:
+    if not base and not derived:
         df = pd.DataFrame(data)
         return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
-    elif base is None:
+    elif not base:
         filters = derived
-    elif derived is None:
+    elif not derived:
         filters = base
     else:
         filters = base + derived
