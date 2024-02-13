@@ -60,6 +60,8 @@ youtube_search = dbc.Container(
 layout = dbc.Container(
     [
         html.Br(),
+        filters,
+        html.Br(),
         youtube_search
     ]
 )
