@@ -149,7 +149,7 @@ def download_vid_info(click, data, filters):
     -------
     download - csv of the video IDs and their details
     """
-    if filters is None:
+    if not filters:
         df = pd.DataFrame(data)
         return dcc.send_data_frame(df.to_csv, "youtube_features.csv", index=False)
 
