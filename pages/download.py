@@ -169,7 +169,8 @@ def update_play_info(set_progress, click, predict, apps):
 )
 def play_download(click, data, predict, base, derived):
     if base is None and derived is None:
-        filters = []
+        df = pd.DataFrame(data)
+        return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
     elif base is None:
         filters = derived
     elif derived is None:
