@@ -10,6 +10,21 @@ from youtube_scraper import *
 
 dash.register_page(__name__)
 
+features = ['video_id', 'unavailable', 'private', 'requires_payment', 'is_livestream_recording_not_available', 'livestream_recording_not_available',
+            'title', 'description', 'view_count', 'length_seconds', 'channel_name', 'channel_id', 'channel_url', 'family_safe', 'unlisted', 'live_content',
+            'removed', 'category', 'upload_date', 'publish_date', 'video_recommendations']
+
+filters = dbc.Row(
+    [
+        dbc.Col(
+            dcc.Dropdown(sorted(features), value=['title', 'video_id'], persistence=True, multi=True, placeholder="Select features", id="you-filters")
+        ),
+    ],
+    class_name="g-2 ms-auto flex-wrap mx-auto",
+    align="center",
+    style={"width": "1000px"}
+)
+
 youtube_search = dbc.Container(
     [
         html.Br(),
@@ -116,10 +131,11 @@ def get_vids(click, apps):
     Input('dl-button-you', 'n_clicks'),
     [
         State('dl-temp-you', 'data'),
+        State('you-filters', 'value')
     ],
     prevent_initial_call=True
 )
-def download_vid_info(click, data):
+def download_vid_info(click, data, filters):
     """
     Function to
     Parameters
@@ -131,8 +147,9 @@ def download_vid_info(click, data):
     -------
     download - csv of the video IDs and their details
     """
-    #print(data)
+    if filters is None:
+        filters = []
+
     df = pd.DataFrame(data)
-    #print()
-    #print(df)
+    df.drop(columns=df.columns.difference(filters), inplace=True)
     return dcc.send_data_frame(df.to_csv, "youtube_vids.csv", index=False)
