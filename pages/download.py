@@ -53,12 +53,20 @@ play_tab = dbc.Container(
                 dbc.Col(
                     dbc.Progress(id="dl-play-progress", style={"height": "2rem"}, animated=True, striped=True),
                     width=3
-                )
+                ),
+                dbc.Col(
+                    [
+                        dbc.Button("Download Missing IDs", color="success", id="dl-button-play2", n_clicks=0, disabled=True),
+                        dcc.Download(id="dl-play2")
+                    ],
+                    width="auto"
+                ),
             ],
             class_name="g-2",
             align='center'
         ),
-        dcc.Store(id="dl-temp-play", storage_type='session')
+        dcc.Store(id="dl-temp-play", storage_type='session'),
+        dcc.Store(id="dl-temp-play-none", storage_type='session')
     ]
 )
 
@@ -110,6 +118,7 @@ layout = dbc.Container(
 
 @dash.callback(
     Output('dl-temp-play', 'data'),
+    Output('dl-temp-play-none', 'data'),
     [
         Input('confirm-button-play', 'n_clicks'),
     ],
@@ -119,6 +128,7 @@ layout = dbc.Container(
     ],
     running=[
         (Output("dl-button-play", "disabled"), True, False),
+        (Output("dl-button-play2", "disabled"), True, False),
         (Output("dl-play-progress", "animated"), True, False),
     ],
     progress=[
@@ -154,7 +164,7 @@ def update_play_info(set_progress, click, predict, apps):
             not_found.append(app_id)
         time.sleep(0.5)
     
-    return full_play_ls
+    return full_play_ls, not_found
 
 @dash.callback(
     Output('dl-play', 'data'),
@@ -185,3 +195,15 @@ def play_download(click, data, predict, base, derived):
     df.drop(columns=df.columns.difference(filters), inplace=True)
     
     return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
+
+
+@dash.callback(
+    Output('dl-play2', 'data'),
+    Input('dl-button-play2', 'n_clicks'),
+    State('dl-temp-play-none', 'data'),
+    prevent_initial_call=True
+)
+def play_download2(click, not_found):
+    df = pd.DataFrame({"appId": not_found})
+
+    return dcc.send_data_frame(df.to_csv, "play_features_not_found.csv", index=False)
