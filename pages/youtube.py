@@ -30,7 +30,7 @@ youtube_search = dbc.Container(
         html.Br(),
         dbc.Textarea(
             className="mb-3", style={"height": "20rem"}, id="dl-input-you",
-            placeholder="Enter the video IDs for the YouTube features you wish to download. Please place one video per line."
+            placeholder="Enter the video IDs for the YouTube features you wish to download. Please place one video per line.\nEx:\n_cVGrRNi_2k\nSGM--zQnCME"
         ),
         dbc.Row(
             [
