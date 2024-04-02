@@ -15,27 +15,41 @@ features = ['title', 'appId', 'realInstalls', 'score', 'developer', 'version', '
 features_derived = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar', 
 'developerNApps', 'developerAppAgeMedian', 'developerCountry', 'releasedYear']
 
-filters = dbc.Row(
-    [
-        dbc.Col(
-            dcc.Dropdown(sorted(features), value=['title', 'appId'], persistence=True, multi=True, placeholder="Select base features", id="filters-base")
-        ),
-        dbc.Col(
-            dcc.Dropdown(sorted(features_derived), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
-        ),
-        dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
-    ],
-    class_name="g-2 ms-auto flex-wrap mx-auto",
-    align="center",
-    style={"width": "1000px"}
-)
+# filters = dbc.Row(
+#     [
+#         dbc.Col(
+#             dcc.Dropdown(sorted(features), value=['title', 'appId'], persistence=True, multi=True, placeholder="Select base features", id="filters-base")
+#         ),
+#         dbc.Col(
+#             dcc.Dropdown(sorted(features_derived), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
+#         ),
+#         dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
+#     ],
+#     class_name="g-2 ms-auto flex-wrap mx-auto",
+#     align="center",
+#     style={"width": "1000px"}
+# )
 
 play_tab = dbc.Container(
     [
+        dbc.Row(
+        [
+            dbc.Col(
+                dcc.Dropdown(sorted(features), value=['title', 'appId'], persistence=True, multi=True, placeholder="Select base features", id="filters-base")
+            ),
+            dbc.Col(
+                dcc.Dropdown(sorted(features_derived), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
+            ),
+            dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
+        ],
+        class_name="g-2 ms-auto flex-wrap mx-auto",
+        align="center",
+        style={"width": "1000px"}
+        ),
         html.Br(),
         dbc.Textarea(
             className="mb-3", style={"height": "20rem"}, id="dl-input-play",
-            placeholder="Enter the app IDs for the app features you wish to download. Please place one app per line."
+            placeholder="Enter the app IDs for the app features you wish to download. Please place one app per line.\nEx:\ncom.duolingo\nvitaminshoppe.consumerapp"
         ),
         dbc.Row(
             [
@@ -75,7 +89,7 @@ apple_tab = dbc.Container(
         html.Br(),
         dbc.Textarea(
             className="mb-3", style={"height": "20rem"}, id="dl-input-apple",
-            placeholder="Enter the app IDs for the app features you wish to download. Please place one app per line."
+            placeholder="Enter the app IDs for the app features you wish to download. Please place one app per line.\nEx:\n1024722275\n1448010566"
         ),
         dbc.Row(
             [
@@ -93,23 +107,29 @@ apple_tab = dbc.Container(
                 dbc.Col(
                     dbc.Progress(id="dl-apple-progress", style={"height": "2rem"}, animated=True, striped=True),
                     width="auto"
+                ),
+                dbc.Col(
+                    [
+                        dbc.Button("Download Missing IDs", color="success", id="dl-button-apple2", n_clicks=0, disabled=True),
+                        dcc.Download(id="dl-apple2")
+                    ],
+                    width="auto"
                 )
             ],
             class_name="g-1"
         ),
-        dcc.Store(id="dl-temp-apple", storage_type='session')
+        dcc.Store(id="dl-temp-apple", storage_type='session'),
+        dcc.Store(id="dl-temp-apple-none", storage_type='session')
     ]
 ) 
 
 layout = dbc.Container(
     [
         html.Br(),
-        filters,
-        html.Br(),
         dbc.Tabs(
             [
                 dbc.Tab(play_tab, label="Play Store", tab_id='play_tab', tab_style={'marginLeft':'auto'}),
-                dbc.Tab(apple_tab, label="Apple App Store", tab_id='apple_tab', disabled=True)
+                dbc.Tab(apple_tab, label="Apple App Store", tab_id='apple_tab')
             ],
             active_tab="play_tab",
         )
@@ -207,3 +227,84 @@ def play_download2(click, not_found):
     df = pd.DataFrame({"appId": not_found})
 
     return dcc.send_data_frame(df.to_csv, "play_features_not_found.csv", index=False)
+
+
+@dash.callback(
+    Output('dl-temp-apple', 'data'),
+    Output('dl-temp-apple-none', 'data'),
+    [
+        Input('confirm-button-apple', 'n_clicks'),
+    ],
+    [
+        State('predict-checkbox', 'checked'),
+        State('dl-input-apple', 'value'),
+    ],
+    running=[
+        (Output("dl-button-apple", "disabled"), True, False),
+        (Output("dl-button-apple2", "disabled"), True, False),
+        (Output("dl-apple-progress", "animated"), True, False),
+    ],
+    progress=[
+        Output("dl-apple-progress", "value"),
+        Output("dl-apple-progress", "label"),
+        Output("dl-apple-progress", "max")
+    ],
+    prevent_initial_call=True,
+    background=True
+)
+def update_apple_info(set_progress, click, predict, apps):
+    full_apple_ls = []
+    not_found = []
+    apps_ls = apps.split('\n')
+    n_apps = len(apps_ls)
+    for idx, app_id in enumerate(apps_ls):
+        print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
+        set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
+        try:
+            app_info = Apple(app_id=app_id.strip())
+            apple_details = app_info.get_details()
+            time.sleep(0.5)
+            #apple_reviews = app_info.get_reviews(sort='relevance')
+
+            #play_info = play_features(play_details, play_reviews)
+            #apple_info = play_features(apple_details, apple_reviews)
+            #if predict:
+            #    pred_e = generate_predictions(apple_info, 'educational')
+            #    pred_v = generate_predictions(apple_info, 'violent')
+            #    apple_info['educational_proba'] = pred_e
+            #    apple_info['violent_proba'] = pred_v
+            #full_apple_ls.append(apple_info)
+            full_apple_ls.append(apple_details)
+        except Exception as e:
+            print(e)
+            not_found.append(app_id)
+        time.sleep(0.5)
+
+    return full_apple_ls, not_found
+
+@dash.callback(
+    Output('dl-apple', 'data'),
+    Input('dl-button-apple', 'n_clicks'),
+    [
+        State('dl-temp-apple', 'data'),
+        State('predict-checkbox', 'checked'),
+        State('filters-base', 'value'),
+        State('filters-derived', 'value')
+    ],
+    prevent_initial_call=True
+)
+def apple_download(click, data, predict, base, derived):
+    df = pd.DataFrame(data)
+
+    return dcc.send_data_frame(df.to_csv, "apple_features.csv", index=False)
+
+@dash.callback(
+    Output('dl-apple2', 'data'),
+    Input('dl-button-apple2', 'n_clicks'),
+    State('dl-temp-apple-none', 'data'),
+    prevent_initial_call=True
+)
+def apple_download2(click, not_found):
+    df = pd.DataFrame({"appId": not_found})
+
+    return dcc.send_data_frame(df.to_csv, "apple_features_not_found.csv", index=False)
