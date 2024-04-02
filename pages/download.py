@@ -106,7 +106,7 @@ apple_tab = dbc.Container(
                 ),
                 dbc.Col(
                     dbc.Progress(id="dl-apple-progress", style={"height": "2rem"}, animated=True, striped=True),
-                    width="auto"
+                    width=3
                 ),
                 dbc.Col(
                     [
