@@ -162,6 +162,7 @@ layout = dbc.Container(
 def update_play_info(set_progress, click, predict, apps):
     full_play_ls = []
     not_found = []
+    not_found2 = []
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
     for idx, app_id in enumerate(apps_ls):
@@ -183,8 +184,26 @@ def update_play_info(set_progress, click, predict, apps):
             print(e)
             not_found.append(app_id)
         time.sleep(0.5)
+
+    for app_id in not_found:
+        try:
+            app_info = Play(app_id=app_id.strip())
+            play_details = app_info.get_details()
+            time.sleep(0.5)
+            play_reviews = app_info.get_reviews(sort='relevance')
+            play_info = play_features(play_details, play_reviews)
+            if predict:
+                pred_e = generate_predictions(play_info, 'educational')
+                pred_v = generate_predictions(play_info, 'violent')
+                play_info['educational_proba'] = pred_e
+                play_info['violent_proba'] = pred_v
+            full_play_ls.append(play_info)
+        except Exception as e:
+            print(e)
+            not_found2.append(app_id)
+        time.sleep(0.5)
     
-    return full_play_ls, not_found
+    return full_play_ls, not_found2
 
 @dash.callback(
     Output('dl-play', 'data'),
