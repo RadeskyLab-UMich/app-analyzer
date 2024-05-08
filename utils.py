@@ -16,6 +16,7 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('vader_lexicon')
+stopwords.ensure_loaded()
 
 import googlemaps
 from itunes_app_scraper.scraper import AppStoreScraper
@@ -31,7 +32,7 @@ load_dotenv()
 def play_features(data, reviews=None):
     '''
     Returns the base and derived features of a Play Store app in a dictionary.
-    
+
     Parameters
     ----------
     data: dict
@@ -233,7 +234,7 @@ def generate_predictions(data, target='educational'):
     '''
     Given a set of features obtained with the `play_features` function, generates the
     predicted probability that the app fits the target label.
-    
+
     Parameters
     ----------
     data: dict
@@ -261,5 +262,5 @@ def generate_predictions(data, target='educational'):
         raise ValueError("Invalid target. Expected one of: %s." % target_ls)
     model_features, data_processed = model_features.align(data_processed, join='left', axis=1, fill_value=0)
     pred = model.predict_proba(data_processed)[:,1][0]
-    
+
     return pred
