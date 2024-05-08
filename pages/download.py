@@ -223,10 +223,43 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
     for app_id in not_found:
         try:
             app_info = Play(app_id=app_id.strip())
-            play_details = app_info.get_details()
+            play_info = app_info.get_details()
             time.sleep(0.5)
-            play_reviews = app_info.get_reviews(sort='relevance')
-            play_info = play_features(play_details, play_reviews)
+
+            if derived:
+                if "reviewsSentiment" in derived: # added
+                    reviews = app_info.get_reviews(sort='relevance')
+                    if len(reviews) > 0:
+                        play_info['reviewsSentiment'] = process_reviews_sentiment(reviews)
+                    else:
+                        play_info['reviewsSentiment'] = np.nan
+
+                if "ratingsStd" in derived or "ratingsSkew" in derived: # added
+                    # process histogram
+                    reviews_dist = np.concatenate([np.full(n, i+1) for i, n in enumerate(play_info['histogram'])])
+
+                    if len(reviews_dist) > 0:
+                        play_info['ratingsStd'] = round(np.std(reviews_dist), 4)
+                        play_info['ratingsSkew'] = round(skew(reviews_dist, nan_policy='omit'), 4)
+                    else:
+                        play_info['ratingsStd'] = np.nan
+                        play_info['ratingsSkew'] = np.nan
+
+                if "descriptionGrammar" in derived:
+                    play_info['descriptionGrammar'] = process_grammar(play_info['description'])
+                if "descriptionReadability" in derived:
+                    play_info['descriptionReadability'] = textstat.flesch_kincaid_grade(play_info['description'])
+                if "descriptionSentiment" in derived:
+                    sia = SentimentIntensityAnalyzer()
+                    play_info['descriptionSentiment'] = sia.polarity_scores(process_text(play_info['description']))['compound']
+                if "developerCountry" in derived:
+                    play_info['developerCountry'] = process_address(play_info['developerAddress'])
+                if "developerNApps" in derived or "developerAppAgeMedian" in derived:
+                    play_info['developerNApps'], play_info['developerAppAgeMedian'] = process_developer(play_info['developerId'])
+                if play_info['released']:
+                    play_info['releasedYear'] = int(play_info['released'][-4:])
+                    play_info['releasedYears'] = datetime.now().year - play_info['releasedYear']
+
             if predict:
                 pred_e = generate_predictions(play_info, 'educational')
                 pred_v = generate_predictions(play_info, 'violent')
@@ -237,7 +270,7 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
             print(e)
             not_found2.append(app_id)
         time.sleep(0.5)
-    
+
     return full_play_ls, not_found2
 
 @dash.callback(
@@ -261,13 +294,13 @@ def play_download(click, data, predict, base, derived):
         filters = base
     else:
         filters = base + derived
-    
+
     if predict:
         filters = filters + ['educational_proba', 'violent_proba']
 
     df = pd.DataFrame(data)
     df.drop(columns=df.columns.difference(filters), inplace=True)
-    
+
     return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
 
 
