@@ -6,6 +6,7 @@ import dash_mantine_components as dmc
 from dash.dependencies import Input, Output, State
 from api import Play, Apple
 from utils import *
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 dash.register_page(__name__)
 
@@ -172,16 +173,42 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
         set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
         try:
             app_info = Play(app_id=app_id.strip())
-            play_details = app_info.get_details()
+            play_info = app_info.get_details()
             time.sleep(0.5)
             if derived:
-                if "ratingsSkew" in derived or "ratingsStd" in derived or "reviewsSentiment" in derived: # added
-                    play_reviews = app_info.get_reviews(sort='relevance')
-                    play_info = play_features(play_details, reviews=play_reviews)#, base=base, derived=derived)
-                else:
-                    play_info = play_features(play_details)#, base=base, derived=derived)
-            else:
-                play_info = play_details
+                if "reviewsSentiment" in derived: # added
+                    reviews = app_info.get_reviews(sort='relevance')
+                    if len(reviews) > 0:
+                        play_info['reviewsSentiment'] = process_reviews_sentiment(reviews)
+                    else:
+                        play_info['reviewsSentiment'] = np.nan
+
+                if "ratingsStd" in derived or "ratingsSkew" in derived: # added
+                    # process histogram
+                    reviews_dist = np.concatenate([np.full(n, i+1) for i, n in enumerate(play_info['histogram'])])
+
+                    if len(reviews_dist) > 0:
+                        play_info['ratingsStd'] = round(np.std(reviews_dist), 4)
+                        play_info['ratingsSkew'] = round(skew(reviews_dist, nan_policy='omit'), 4)
+                    else:
+                        play_info['ratingsStd'] = np.nan
+                        play_info['ratingsSkew'] = np.nan
+
+                if "descriptionGrammar" in derived:
+                    play_info['descriptionGrammar'] = process_grammar(play_info['description'])
+                if "descriptionReadability" in derived:
+                    play_info['descriptionReadability'] = textstat.flesch_kincaid_grade(play_info['description'])
+                if "descriptionSentiment" in derived:
+                    sia = SentimentIntensityAnalyzer()
+                    play_info['descriptionSentiment'] = sia.polarity_scores(process_text(play_info['description']))['compound']
+                if "developerCountry" in derived:
+                    play_info['developerCountry'] = process_address(play_info['developerAddress'])
+                if "developerNApps" in derived or "developerAppAgeMedian" in derived:
+                    play_info['developerNApps'], play_info['developerAppAgeMedian'] = process_developer(play_info['developerId'])
+                if play_info['released']:
+                    play_info['releasedYear'] = int(play_info['released'][-4:])
+                    play_info['releasedYears'] = datetime.now().year - play_info['releasedYear']
+
             if predict:
                 pred_e = generate_predictions(play_info, 'educational')
                 pred_v = generate_predictions(play_info, 'violent')
