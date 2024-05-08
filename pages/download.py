@@ -121,7 +121,7 @@ apple_tab = dbc.Container(
         dcc.Store(id="dl-temp-apple", storage_type='session'),
         dcc.Store(id="dl-temp-apple-none", storage_type='session')
     ]
-) 
+)
 
 layout = dbc.Container(
     [
@@ -145,6 +145,8 @@ layout = dbc.Container(
     [
         State('predict-checkbox', 'checked'),
         State('dl-input-play', 'value'),
+        State('filters-base', 'value'), # added
+        State('filters-derived', 'value') # added
     ],
     running=[
         (Output("dl-button-play", "disabled"), True, False),
@@ -159,7 +161,7 @@ layout = dbc.Container(
     prevent_initial_call=True,
     background=True
 )
-def update_play_info(set_progress, click, predict, apps):
+def update_play_info(set_progress, click, predict, apps, base, derived):
     full_play_ls = []
     not_found = []
     not_found2 = []
@@ -172,8 +174,14 @@ def update_play_info(set_progress, click, predict, apps):
             app_info = Play(app_id=app_id.strip())
             play_details = app_info.get_details()
             time.sleep(0.5)
-            play_reviews = app_info.get_reviews(sort='relevance')
-            play_info = play_features(play_details, play_reviews)
+            if derived:
+                if "ratingsSkew" in derived or "ratingsStd" in derived or "reviewsSentiment" in derived: # added
+                    play_reviews = app_info.get_reviews(sort='relevance')
+                    play_info = play_features(play_details, reviews=play_reviews)#, base=base, derived=derived)
+                else:
+                    play_info = play_features(play_details)#, base=base, derived=derived)
+            else:
+                play_info = play_details
             if predict:
                 pred_e = generate_predictions(play_info, 'educational')
                 pred_v = generate_predictions(play_info, 'violent')
