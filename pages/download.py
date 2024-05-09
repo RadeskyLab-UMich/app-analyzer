@@ -170,8 +170,7 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
 
-    if "descriptionGrammar" in derived:
-        tool = language_tool_python.LanguageTool('en-US')
+    tool = language_tool_python.LanguageTool('en-US')
 
     for idx, app_id in enumerate(apps_ls):
         print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
@@ -278,8 +277,7 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
             not_found2.append(app_id)
         time.sleep(0.5)
 
-    if "descriptionGrammar" in derived:
-        tool.close()
+    tool.close()
 
     return full_play_ls, not_found2
 
