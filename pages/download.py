@@ -7,6 +7,7 @@ from dash.dependencies import Input, Output, State
 from api import Play, Apple
 from utils import *
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import language_tool_python
 
 dash.register_page(__name__)
 
@@ -168,6 +169,10 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
     not_found2 = []
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
+
+    if "descriptionGrammar" in derived:
+        tool = language_tool_python.LanguageTool('en-US')
+
     for idx, app_id in enumerate(apps_ls):
         print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
         set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
@@ -195,7 +200,8 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
                         play_info['ratingsSkew'] = np.nan
 
                 if "descriptionGrammar" in derived:
-                    play_info['descriptionGrammar'] = process_grammar(play_info['description'])
+                    matches = tool.check(text)
+                    play_info['descriptionGrammar'] = round((len(text) - len(matches))/len(text) * 100, 2)
                 if "descriptionReadability" in derived:
                     play_info['descriptionReadability'] = textstat.flesch_kincaid_grade(play_info['description'])
                 if "descriptionSentiment" in derived:
@@ -246,7 +252,8 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
                         play_info['ratingsSkew'] = np.nan
 
                 if "descriptionGrammar" in derived:
-                    play_info['descriptionGrammar'] = process_grammar(play_info['description'])
+                    matches = tool.check(text)
+                    play_info['descriptionGrammar'] = round((len(text) - len(matches))/len(text) * 100, 2)
                 if "descriptionReadability" in derived:
                     play_info['descriptionReadability'] = textstat.flesch_kincaid_grade(play_info['description'])
                 if "descriptionSentiment" in derived:
@@ -270,6 +277,9 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
             print(e)
             not_found2.append(app_id)
         time.sleep(0.5)
+
+    if "descriptionGrammar" in derived:
+        tool.close()
 
     return full_play_ls, not_found2
 
