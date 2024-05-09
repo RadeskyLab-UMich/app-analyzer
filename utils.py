@@ -145,8 +145,8 @@ def process_grammar(text):
     '''
     Returns the grammatical error rate of a given piece of text.
     '''
-    tool = language_tool_python.LanguageToolPublicAPI('en-US')
-    # tool = language_tool_python.LanguageTool('en-US')
+    # tool = language_tool_python.LanguageToolPublicAPI('en-US')
+    tool = language_tool_python.LanguageTool('en-US')
     matches = tool.check(text)
     tool.close()
     return round((len(text) - len(matches))/len(text) * 100, 2)
