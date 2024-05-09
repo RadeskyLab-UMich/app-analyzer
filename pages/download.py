@@ -199,8 +199,8 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
                         play_info['ratingsSkew'] = np.nan
 
                 if "descriptionGrammar" in derived:
-                    matches = tool.check(text)
-                    play_info['descriptionGrammar'] = round((len(text) - len(matches))/len(text) * 100, 2)
+                    matches = tool.check(play_info["description"])
+                    play_info['descriptionGrammar'] = round((len(play_info["description"]) - len(matches))/len(play_info["description"]) * 100, 2)
                 if "descriptionReadability" in derived:
                     play_info['descriptionReadability'] = textstat.flesch_kincaid_grade(play_info['description'])
                 if "descriptionSentiment" in derived:
@@ -251,8 +251,8 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
                         play_info['ratingsSkew'] = np.nan
 
                 if "descriptionGrammar" in derived:
-                    matches = tool.check(text)
-                    play_info['descriptionGrammar'] = round((len(text) - len(matches))/len(text) * 100, 2)
+                    matches = tool.check(play_info["description"])
+                    play_info['descriptionGrammar'] = round((len(play_info["description"]) - len(matches))/len(play_info["description"]) * 100, 2)
                 if "descriptionReadability" in derived:
                     play_info['descriptionReadability'] = textstat.flesch_kincaid_grade(play_info['description'])
                 if "descriptionSentiment" in derived:
