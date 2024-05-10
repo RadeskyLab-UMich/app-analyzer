@@ -216,10 +216,14 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
                     play_info['releasedYears'] = datetime.now().year - play_info['releasedYear']
 
             if predict:
-                pred_e = generate_predictions(play_info, 'educational')
-                pred_v = generate_predictions(play_info, 'violent')
-                play_info['educational_proba'] = pred_e
-                play_info['violent_proba'] = pred_v
+                try:
+                    pred_e = generate_predictions(play_info, 'educational')
+                    pred_v = generate_predictions(play_info, 'violent')
+                    play_info['educational_proba'] = pred_e
+                    play_info['violent_proba'] = pred_v
+                except:
+                    play_info["educational_proba"] = np.nan
+                    play_info["violent_proba"] = np.nan
             full_play_ls.append(play_info)
         except Exception as e:
             print(e)
@@ -268,10 +272,14 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
                     play_info['releasedYears'] = datetime.now().year - play_info['releasedYear']
 
             if predict:
-                pred_e = generate_predictions(play_info, 'educational')
-                pred_v = generate_predictions(play_info, 'violent')
-                play_info['educational_proba'] = pred_e
-                play_info['violent_proba'] = pred_v
+                try:
+                    pred_e = generate_predictions(play_info, 'educational')
+                    pred_v = generate_predictions(play_info, 'violent')
+                    play_info['educational_proba'] = pred_e
+                    play_info['violent_proba'] = pred_v
+                except:
+                    play_info["educational_proba"] = np.nan
+                    play_info["violent_proba"] = np.nan
             full_play_ls.append(play_info)
         except Exception as e:
             print(e)
