@@ -10,7 +10,7 @@ THEME = dbc.themes.LUMEN
 app = Dash(
     __name__,
     external_stylesheets=[THEME, "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"],
-    use_pages=True, 
+    use_pages=True,
     background_callback_manager=bcm
 )
 server = app.server
@@ -38,12 +38,7 @@ header = dbc.Navbar(
             dbc.Row(
                 [
                     dbc.Col(
-                        dcc.Link('Download', href=page_registry['pages.download']['path']),
-                        width="auto",
-                        className="nav-link"
-                    ),
-                    dbc.Col(
-                        dcc.Link('YouTube', href=page_registry['pages.youtube']['path']),
+                        dcc.Link('Scrapers', href=page_registry['pages.scrapers']['path']),
                         width="auto",
                         className="nav-link"
                     ),

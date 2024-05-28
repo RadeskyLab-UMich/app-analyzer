@@ -1,4 +1,5 @@
 import time
+import asyncio
 import dash
 from dash import html, dcc, dash_table as dt
 import dash_bootstrap_components as dbc
@@ -6,41 +7,38 @@ import dash_mantine_components as dmc
 from dash.dependencies import Input, Output, State
 from api import Play, Apple
 from utils import *
+from youtube_scraper import *
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import language_tool_python
 
 dash.register_page(__name__)
 
-features = ['title', 'appId', 'realInstalls', 'score', 'developer', 'version', 'description', 'ratings', 'reviews', 'price', 'free', 'currency', 'sale',
+
+
+
+
+features_play = ['title', 'appId', 'realInstalls', 'score', 'developer', 'version', 'description', 'ratings', 'reviews', 'price', 'free', 'currency', 'sale',
 'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released']
 
-features_derived = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar', 
+features_derived_play = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar', 
 'developerNApps', 'developerAppAgeMedian', 'developerCountry', 'releasedYear']
 
-# filters = dbc.Row(
-#     [
-#         dbc.Col(
-#             dcc.Dropdown(sorted(features), value=['title', 'appId'], persistence=True, multi=True, placeholder="Select base features", id="filters-base")
-#         ),
-#         dbc.Col(
-#             dcc.Dropdown(sorted(features_derived), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
-#         ),
-#         dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
-#     ],
-#     class_name="g-2 ms-auto flex-wrap mx-auto",
-#     align="center",
-#     style={"width": "1000px"}
-# )
+features_tube = ['video_id', 'unavailable', 'private', 'requires_payment', 'is_livestream_recording_not_available', 'livestream_recording_not_available',
+            'title', 'description', 'view_count', 'length_seconds', 'channel_name', 'channel_id', 'channel_url', 'family_safe', 'unlisted', 'live_content',
+            'removed', 'category', 'upload_date', 'publish_date', 'video_recommendations']
 
+
+# GOOGLE PLAY TAB CONFIGURATION
 play_tab = dbc.Container(
     [
+        html.Br(),
         dbc.Row(
         [
             dbc.Col(
-                dcc.Dropdown(sorted(features), value=['title', 'appId'], persistence=True, multi=True, placeholder="Select base features", id="filters-base")
+                dcc.Dropdown(sorted(features_play), value=['title', 'appId'], persistence=True, multi=True, placeholder="Select base features", id="filters-base")
             ),
             dbc.Col(
-                dcc.Dropdown(sorted(features_derived), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
+                dcc.Dropdown(sorted(features_derived_play), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
             ),
             dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
         ],
@@ -86,6 +84,7 @@ play_tab = dbc.Container(
     ]
 )
 
+# APPLE TAB CONFIGURATION
 apple_tab = dbc.Container(
     [
         html.Br(),
@@ -125,19 +124,76 @@ apple_tab = dbc.Container(
     ]
 )
 
+# YOUTUBE TAB CONFIGURATION
+you_tab = dbc.Container(
+    [
+        html.Br(),
+        dbc.Row(
+        [
+            dbc.Col(
+                dcc.Dropdown(sorted(features_tube), value=['title', 'video_id'], persistence=True, multi=True, placeholder="Select features", id="you-filters")
+            ),
+        ],
+        class_name="g-2 ms-auto flex-wrap mx-auto",
+        align="center",
+        style={"width": "1000px"}
+        ),
+        html.Br(),
+        dbc.Textarea(
+            className="mb-3", style={"height": "20rem"}, id="dl-input-you",
+            placeholder="Enter the video IDs for the YouTube features you wish to download. Please place one video per line.\nEx:\n_cVGrRNi_2k\nSGM--zQnCME"
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Button("Confirm", color="primary", id="confirm-button-you", n_clicks=0),
+                    width="auto"
+                ),
+                dbc.Col(
+                    [
+                        dbc.Button("Download as CSV", color="secondary", id="dl-button-you", n_clicks=0, disabled=True),
+                        dcc.Download(id="dl-you")
+                    ],
+                    width="auto"
+                ),
+                # dbc.Col(
+                #     dbc.Progress(id="dl-you-progress", style={"height": "2rem"}, animated=True, striped=True),
+                #     width=3
+                # )
+            ],
+            class_name="g-2",
+            align='center'
+        ),
+        dcc.Store(id="dl-temp-you", storage_type='session')
+    ]
+)
+
+
+# PAGE LAYOUT
 layout = dbc.Container(
     [
         html.Br(),
         dbc.Tabs(
             [
-                dbc.Tab(play_tab, label="Play Store", tab_id='play_tab', tab_style={'marginLeft':'auto'}),
-                dbc.Tab(apple_tab, label="Apple App Store", tab_id='apple_tab')
+                dbc.Tab(apple_tab, label="Apple", tab_id='apple_tab', tab_style={'marginLeft':'auto'}),
+                dbc.Tab(play_tab, label="Google Play", tab_id='play_tab'),
+                dbc.Tab(you_tab, label="YouTube", tab_id="you_tab")
             ],
             active_tab="play_tab",
         )
     ]
 )
 
+
+
+
+
+
+
+
+
+
+# GOOGLE PLAY SCRAPER FUNCTIONS
 @dash.callback(
     Output('dl-temp-play', 'data'),
     Output('dl-temp-play-none', 'data'),
@@ -334,6 +390,13 @@ def play_download2(click, not_found):
     return dcc.send_data_frame(df.to_csv, "play_features_not_found.csv", index=False)
 
 
+
+
+
+
+
+
+# APPLE SCRAPER FUNCTIONS
 @dash.callback(
     Output('dl-temp-apple', 'data'),
     Output('dl-temp-apple-none', 'data'),
@@ -413,3 +476,101 @@ def apple_download2(click, not_found):
     df = pd.DataFrame({"appId": not_found})
 
     return dcc.send_data_frame(df.to_csv, "apple_features_not_found.csv", index=False)
+
+
+
+
+
+
+
+
+
+# YOUTUBE SCRAPER FUNCTIONS
+async def get_videos(click, apps):
+    """
+    Function to get video details based on the list provided
+    Parameters
+    ----------
+    click - action
+    apps (list) - video IDs
+
+    Returns
+    -------
+    list - video details
+
+    """
+    scraper = YoutubeScraper()
+
+    video_ids = apps.split()
+    video_df = await scraper.video_metadata(video_ids)
+
+    return video_df
+
+
+
+
+@dash.callback(
+    Output('dl-temp-you', 'data'),
+    [
+        Input('confirm-button-you', 'n_clicks'),
+    ],
+    [
+        State('dl-input-you', 'value'),
+    ],
+    running=[
+        (Output("dl-button-you", "disabled"), True, False),
+        #(Output("dl-button-you", "color"), "green"),
+        #(Output("dl-you-progress", "animated"), True, False),
+    ],
+    # progress=[
+    #     Output("dl-you-progress", "value"),
+    #     Output("dl-you-progress", "label"),
+    #     Output("dl-you-progress", "max")
+    # ],
+    prevent_initial_call=True,
+    background=True
+)
+def get_vids(click, apps):
+    """
+    Function to
+    Parameters
+    ----------
+    click - action
+    apps (list) - list of video IDs
+
+    Returns
+    -------
+    dict - dictionary of video IDs and their details
+    """
+    return asyncio.run(get_videos(click, apps)).to_dict()
+
+
+
+@dash.callback(
+    Output('dl-you', 'data'),
+    Input('dl-button-you', 'n_clicks'),
+    [
+        State('dl-temp-you', 'data'),
+        State('you-filters', 'value')
+    ],
+    prevent_initial_call=True
+)
+def download_vid_info(click, data, filters):
+    """
+    Function to
+    Parameters
+    ----------
+    click
+    data (dict) - dictionary of video IDs and their details
+
+    Returns
+    -------
+    download - csv of the video IDs and their details
+    """
+    if not filters:
+        df = pd.DataFrame(data)
+        return dcc.send_data_frame(df.to_csv, "youtube_features.csv", index=False)
+
+    df = pd.DataFrame(data)
+    df.drop(columns=df.columns.difference(filters), inplace=True)
+    return dcc.send_data_frame(df.to_csv, "youtube_features.csv", index=False)
