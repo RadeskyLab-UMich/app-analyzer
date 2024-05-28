@@ -226,8 +226,9 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
 
-    if "descriptionGrammar" in derived:
-        tool = language_tool_python.LanguageTool('en-US')
+    if derived:
+        if "descriptionGrammar" in derived:
+            tool = language_tool_python.LanguageTool('en-US')
 
     for idx, app_id in enumerate(apps_ls):
         print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
@@ -342,8 +343,9 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
             not_found2.append(app_id)
         time.sleep(0.5)
 
-    if "descriptionGrammar" in derived:
-        tool.close()
+    if derived:
+        if "descriptionGrammar" in derived:
+            tool.close()
 
     return full_play_ls, not_found2
 
@@ -455,13 +457,13 @@ def update_apple_info(set_progress, click, predict, apps):
     Input('dl-button-apple', 'n_clicks'),
     [
         State('dl-temp-apple', 'data'),
-        State('predict-checkbox', 'checked'),
-        State('filters-base', 'value'),
-        State('filters-derived', 'value')
+        # State('predict-checkbox', 'checked'),
+        # State('filters-base', 'value'),
+        # State('filters-derived', 'value')
     ],
     prevent_initial_call=True
 )
-def apple_download(click, data, predict, base, derived):
+def apple_download(click, data):#, predict, base, derived):
     df = pd.DataFrame(data)
 
     return dcc.send_data_frame(df.to_csv, "apple_features.csv", index=False)
