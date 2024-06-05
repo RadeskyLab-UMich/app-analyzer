@@ -6,8 +6,39 @@ from dotenv import load_dotenv
 import pandas as pd
 load_dotenv()
 
+
 class Play:
+    """
+    A class used to represent a Google Play app
+
+    ...
+
+    Attributes
+    ----------
+    country - str
+        a string representing the country code to base the scraping on (default us)
+    app_id - str
+        the ID of the app (default None)
+    search - str
+        the term used to search for an app (default None)
+
+    Methods
+    -------
+    get_details()
+        Gets the details of the app
+    get_reviews(n_reviews=100, sort=recency)
+        Gets the reviews for the app
+    """
+
     def __init__(self, country='us', app_id=None, search=None):
+        """
+        Parameters
+        ----------
+        country (str) - optional, defaults to us
+        app_id (str) - optional, defaults to None
+        search (str) - optional, defaults to None
+        """
+
         self.country = country
         if app_id is not None:
              self.app_id = app_id
@@ -17,20 +48,39 @@ class Play:
             raise ValueError("Either an app ID or a search term must be provided.")
 
     def get_details(self):
+        """
+        Function to scrape data for a Google Play app ID.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        result (dict) or None - dictionary of the app containing info such as title, price, etc., or None if not found.
+        """
+
         result = app(country=self.country, app_id=self.app_id)
         return result
 
     def get_reviews(self, n_reviews=100, sort='recency'):
         """
+        Function to get reviews for a specific app.
+
         Parameters
         ----------
-        n_reviews : str, int (optional)
+        n_reviews - str, int (optional)
             The number of reviews to return. 'all' returns all reviews.
             Defaults to 100.
-        sort : str (optional)
+        sort - str (optional)
             The sorting method for the reviews. Choose between 'recency' and 'relevance'.
             Defaults to 'recency'.
+
+        Returns
+        -------
+        result (list) - list of dictionaries of reviews (each review is a dict containing reviewId, userName, content, etc.)
         """
+
         if sort == 'recency':
             if n_reviews == 'all':
                 result = reviews_all(self.app_id, count=n_reviews, sort=Sort.NEWEST)
@@ -44,8 +94,42 @@ class Play:
         else:
             raise ValueError("Invalid sort type. Expected either 'recency' or 'relevance'.")
 
+
+
+
+
 class Apple:
+    """
+    A class used to represent an iTunes / Apple App Store app
+
+    ...
+
+    Attributes
+    ----------
+    country - str
+        a string representing the country code to base the scraping on (default us)
+    app_id - str
+        the ID of the app (default None)
+    search - str
+        the term used to search for an app (default None)
+
+    Methods
+    -------
+    get_details()
+        Gets the details of the app
+    get_reviews(n_reviews=100, sort=recency)
+        Gets the reviews for the app
+    """
+
     def __init__(self, country='us', app_id=None, search=None):
+        """
+        Parameters
+        ----------
+        country (str) - optional, defaults to us
+        app_id (str) - optional, defaults to None
+        search (str) - optional, defaults to None
+        """
+
         self.country = country
         if app_id is not None:
             self.app_id = app_id
@@ -55,6 +139,18 @@ class Apple:
             raise ValueError("Either an app ID or a search term must be provided.")
 
     def get_details(self):
+        """
+        Function to scrape data for a Apple app ID.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        result (dict) or None - dictionary of the app containing info such as title, price, etc., or None if not found.
+        """
+
         # SERP_PROD = "https://serpapi.com/search.json?engine=apple_product&"
         # result = requests.get(f"{SERP_PROD}country={self.country}&product_id={self.app_id}&api_key={os.getenv('SERP_KEY')}").json()
         scraper = AppStoreScraper()
@@ -66,15 +162,22 @@ class Apple:
 
     def get_reviews(self, n_reviews=50, sort='recency'):
         """
+        Function to get reviews for a specific app.
+
         Parameters
         ----------
-        n_reviews : str, int (optional)
+        n_reviews - str, int (optional)
             The number of reviews to return.
             Defaults to 50.
-        sort : str (optional)
+        sort - str (optional)
             The sorting method for the reviews. Choose between 'recency' and 'relevance'.
             Defaults to 'recency'.
+
+        Returns
+        -------
+        result (list) - list of nested dictionaries of reviews (each review is a dicr containing author, name, content, etc.)
         """
+
         # SERP_REVIEW = "https://serpapi.com/search.json?engine=apple_reviews&"
         REVIEW_URL = "https://itunes.apple.com/rss/customerreviews/"
         if sort == 'recency':
@@ -86,24 +189,31 @@ class Apple:
             result = requests.get(f"{REVIEW_URL}id={self.app_id}/sortBy=mostHelpful/json").json()
             return result['feed']['entry']
         else:
-            raise ValueError("Invalid sort type. Expected either 'recency' or 'relevance'.")    
+            raise ValueError("Invalid sort type. Expected either 'recency' or 'relevance'.")
+
+
+
 
 
 def search_app(term, store='play', country='us', strategy='id'):
     """
     Parameters
     ----------
-    term : str
+    term - str
         The search term for the app(s).
-    store : str
+    store - str
         The app store to search from ('play': Play Store; 'apple': Apple App Store).
         Defaults to 'play'.
-    country : str, (optional)
+    country - str, (optional)
         The country to search from. Defaults to 'us'.
-    strategy : str, int (optional)
+    strategy - str, int (optional)
         The search strategy to use. 'id' returns the id of the most relevant app.
         Integer n from 1 to 30 returns a list of the top n relevant apps.
         Defaults to 'id'.
+
+    Returns
+    -------
+    str or list of IDs for term of app search
     """
 
     store_ls = ['play', 'apple']
