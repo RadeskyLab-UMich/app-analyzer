@@ -29,9 +29,12 @@ from sklearn.ensemble import RandomForestClassifier
 from dotenv import load_dotenv
 load_dotenv()
 
+
+
+
 def play_features(data, reviews=None):
     '''
-    Returns the base and derived features of a Play Store app in a dictionary.
+    Function to get the base and derived features of a Play Store app.
 
     Parameters
     ----------
@@ -39,7 +42,12 @@ def play_features(data, reviews=None):
         Play Store data retrieved with the `get_details` method.
     reviews: list (optional)
         List of Play Store reviews retrieved with the `get_reviews` method.
+
+    Returns
+    -------
+    dict of the base and derived features of a Play Store app
     '''
+
     features = ['title', 'appId', 'realInstalls', 'score', 'developer', 'version', 'description', 'ratings', 'reviews', 'histogram', 'price', 'free', 'currency', 'sale',
     'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released']
     data_filtered = {k: data[k] for k in data.keys() & set(features)}
@@ -85,20 +93,40 @@ def play_features(data, reviews=None):
 
 #     return data_filtered
 
+
 def process_text(text):
     '''
-    Tokenizes and cleans text for further analyses.
+    Function to tokenize and clean text for further analyses.
+
+    Parameters
+    ----------
+    text (str) - str of text (in this case, usually the description of an app)
+
+    Returns
+    -------
+    str of the processed text
     '''
+
     stop = stopwords.words('english') + list(string.punctuation)
     text_tokenized = word_tokenize(re.sub(r'\d+', '', text))
     text_ls = [txt.lower() for txt in text_tokenized if txt.lower() not in stop]
     processed_text = ' '.join(text_ls)
     return processed_text
 
+
 def process_iap(data):
     '''
-    Returns the maximum and minimum in-app purchase prices.
+    Function to get the max and min in-app purchase prices.
+
+    Parameters
+    ----------
+    data (dict) - dict of the app's data
+
+    Returns
+    -------
+    data with new columns of min and max IAP
     '''
+
     if data['inAppProductPrice'] is not None:
         data['IAPMin'] = re.search(r'\$([^ ]+)', data['inAppProductPrice']).group(1)
         try:
@@ -110,10 +138,20 @@ def process_iap(data):
         data['IAPMax'] = 0
     return data
 
+
 def process_address(address):
     '''
-    Retrieves the country code of a given address using Google's Geocoding API.
+    Function to get the country code of a given address using Google's Geocoding API.
+
+    Parameters
+    ----------
+    address (str) - developer address of an app
+
+    Returns
+    -------
+    str of country code
     '''
+
     if address is None:
         return "Unlisted"
     else:
@@ -125,12 +163,26 @@ def process_address(address):
             return "Unlisted"
         else:
             country = [i['short_name'] for i in location[0]['address_components'] if 'country' in i['types']]
-            return country[0]
+
+            if country:
+                return country[0]
+            else:
+                return "Unlisted"
+
 
 def process_reviews_sentiment(reviews):
     '''
-    Returns the average review sentiment of a given list of reviews obtained with the `get_reviews` method.
+    Function to process the average review sentiment of a given list of reviews obtained with the `get_reviews` method.
+
+    Parameters
+    ----------
+    reviews (list) - list of reviews for an app
+
+    Returns
+    -------
+    float of the average sentiment of the reviews
     '''
+
     reviews_sentiment = []
     sia = SentimentIntensityAnalyzer()
     for review in reviews:
@@ -141,28 +193,41 @@ def process_reviews_sentiment(reviews):
             pass
     return round(np.mean(reviews_sentiment), 4)
 
+
 def process_grammar(text):
     '''
-    Returns the grammatical error rate of a given piece of text.
+    Function to get the grammatical error rate of a given piece of text.
+
+    Parameters
+    ----------
+    text (str) - str of text (in this case, usually the description of an app)
+
+    Returns
+    -------
+    float of grammatical error rate of the text
     '''
+
     tool = language_tool_python.LanguageToolPublicAPI('en-US')
     # tool = language_tool_python.LanguageTool('en-US')
     matches = tool.check(text)
     tool.close()
     return round((len(text) - len(matches))/len(text) * 100, 2)
 
+
 def process_developer(id, store="play"):
     '''
-    Returns the base and derived features of a App Store app in a dictionary.
+    Function to get the number of apps a developer has published on a specific store and the median ages for the app.
 
     Parameters
     ----------
-    id: int
-        Developer ID.
-    store: str (optional)
-        Store to fetch data from ('play': Play Store; 'apple': Apple App Store).
-        Defaults to 'play'.
+    id (int) - Developer ID
+    store (str) - (optional) Store to fetch data from ('play': Play Store; 'apple': Apple App Store). Defaults to 'play'
+
+    Returns
+    -------
+    int of number of apps, int of median age for the apps
     '''
+
     store_ls = ['play', 'apple']
     if store == "play":
         base_url = "https://play.google.com/store/apps/"
@@ -203,46 +268,21 @@ def process_developer(id, store="play"):
     else:
         raise ValueError("Invalid store type. Expected one of: %s." % store_ls)
 
-# def play_features_to_csv(df):
-#     '''
-#     Generates a csv with Play Store features given a dataframe of apps.
-#     '''
-#     for idx, (id, title) in enumerate(zip(df['app_fullname'], df['app_title'])):
-#         if pd.notnull(id):
-#             try:
-#                 app_info = Play(app_id=id)
-#                 play_details = app_info.get_details()
-#             except:
-#                 try:
-#                     app_info = Play(search=title)
-#                     play_details = app_info.get_details()
-#                 except:
-#                     print(f"{id} not found.")
-#         else:
-#             try:
-#                 app_info = Play(search=title)
-#                 play_details = app_info.get_details()
-#             except:
-#                 print(f"{id} not found.")
-#         play_reviews = app_info.get_reviews(sort='relevance')
-#         play_info = play_features(play_details, play_reviews)
-#         print(play_info)
-
-# def apple_features_to_csv(df):
-#     pass
 
 def generate_predictions(data, target='educational'):
     '''
-    Given a set of features obtained with the `play_features` function, generates the
-    predicted probability that the app fits the target label.
+    Function that, given a set of features obtained with the `play_features` function, generates the predicted probability that the app fits the target label.
 
     Parameters
     ----------
-    data: dict
-        Feature dictionary generated using the `play_features` function.
-    target: str (optional)
-        Predict whether or not the given app is 'educational' or 'violent'.
+    data (dict) - Feature dictionary generated using the `play_features` function
+    target (str) - (optional) Predict whether or not the given app is 'educational' or 'violent'
+
+    Returns
+    -------
+    float of the prediction of the target variable/feature
     '''
+
     target_ls = ['educational', 'violent']
     num_columns = ['realInstalls', 'price', 'ratings', 'reviews', 'score', 'ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar', 'developerNApps', 'developerAppAgeMedian', 'releasedYears']
     cat_columns = ['genreId', 'contentRating'] # , 'developerCountry'
