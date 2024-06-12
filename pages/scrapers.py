@@ -10,6 +10,9 @@ from utils import *
 from youtube_scraper import *
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import language_tool_python
+from apple_scraper import AppleApp
+from play_scraper import GoogleApp
+import io
 
 dash.register_page(__name__)
 
@@ -18,9 +21,11 @@ dash.register_page(__name__)
 
 
 features_play = ['title', 'appId', 'realInstalls', 'score', 'developer', 'version', 'description', 'ratings', 'reviews', 'price', 'free', 'currency', 'sale',
-'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released']
+'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released',
+'descriptionHTML', 'summary', 'installs', 'minInstalls', 'reviews', 'histogram', 'saleTime', 'originalPrice', 'saleText', 'developerEmail', 'developerWebsite', 'privacyPolicy',
+'categories', 'icon', 'headerImage', 'screenshots', 'video', 'videoImage', 'updated', 'comments', 'url']
 
-features_derived_play = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar', 
+features_derived_play = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar',
 'developerNApps', 'developerAppAgeMedian', 'developerCountry', 'releasedYear']
 
 features_tube = ['video_id', 'unavailable', 'private', 'requires_payment', 'is_livestream_recording_not_available', 'livestream_recording_not_available',
@@ -54,33 +59,36 @@ play_tab = dbc.Container(
         dbc.Row(
             [
                 dbc.Col(
-                    dbc.Button("Confirm", color="primary", id="confirm-button-play", n_clicks=0),
-                    width="auto"
-                ),
-                dbc.Col(
                     [
-                        dbc.Button("Download as CSV", color="secondary", id="dl-button-play", n_clicks=0, disabled=True),
+                        dbc.Button("Download", color="primary", id="confirm-button-play", n_clicks=0),
                         dcc.Download(id="dl-play")
                     ],
                     width="auto"
                 ),
+                # dbc.Col(
+                #     [
+                #         dbc.Button("Download as CSV", color="secondary", id="dl-button-play", n_clicks=0, disabled=True),
+                #         dcc.Download(id="dl-play")
+                #     ],
+                #     width="auto"
+                # ),
                 dbc.Col(
                     dbc.Progress(id="dl-play-progress", style={"height": "2rem"}, animated=True, striped=True),
                     width=3
                 ),
-                dbc.Col(
-                    [
-                        dbc.Button("Download Missing IDs", color="success", id="dl-button-play2", n_clicks=0, disabled=True),
-                        dcc.Download(id="dl-play2")
-                    ],
-                    width="auto"
-                ),
+                # dbc.Col(
+                #     [
+                #         dbc.Button("Download Missing IDs", color="success", id="dl-button-play2", n_clicks=0, disabled=True),
+                #         dcc.Download(id="dl-play2")
+                #     ],
+                #     width="auto"
+                # ),
             ],
             class_name="g-2",
             align='center'
         ),
-        dcc.Store(id="dl-temp-play", storage_type='session'),
-        dcc.Store(id="dl-temp-play-none", storage_type='session')
+        # dcc.Store(id="dl-temp-play", storage_type='session'),
+        # dcc.Store(id="dl-temp-play-none", storage_type='session')
     ]
 )
 
@@ -95,32 +103,35 @@ apple_tab = dbc.Container(
         dbc.Row(
             [
                 dbc.Col(
-                    dbc.Button("Confirm", color="primary", id="confirm-button-apple", n_clicks=0),
-                    width="auto"
-                ),
-                dbc.Col(
                     [
-                        dbc.Button("Download as CSV", color="secondary", id="dl-button-apple", n_clicks=0, disabled=True),
-                        dcc.Download(id="dl-apple")
+                    dbc.Button("Download", color="primary", id="confirm-button-apple", n_clicks=0),
+                    dcc.Download(id="dl-apple")
                     ],
                     width="auto"
                 ),
+                # dbc.Col(
+                #     [
+                #         dbc.Button("Download as CSV", color="secondary", id="dl-button-apple", n_clicks=0, disabled=True),
+                #         dcc.Download(id="dl-apple")
+                #     ],
+                #     width="auto"
+                # ),
                 dbc.Col(
                     dbc.Progress(id="dl-apple-progress", style={"height": "2rem"}, animated=True, striped=True),
                     width=3
                 ),
-                dbc.Col(
-                    [
-                        dbc.Button("Download Missing IDs", color="success", id="dl-button-apple2", n_clicks=0, disabled=True),
-                        dcc.Download(id="dl-apple2")
-                    ],
-                    width="auto"
-                )
+                # dbc.Col(
+                #     [
+                #         dbc.Button("Download Missing IDs", color="success", id="dl-button-apple2", n_clicks=0, disabled=True),
+                #         dcc.Download(id="dl-apple2")
+                #     ],
+                #     width="auto"
+                # )
             ],
             class_name="g-1"
         ),
-        dcc.Store(id="dl-temp-apple", storage_type='session'),
-        dcc.Store(id="dl-temp-apple-none", storage_type='session')
+        #dcc.Store(id="dl-temp-apple", storage_type='session'),
+        #dcc.Store(id="dl-temp-apple-none", storage_type='session')
     ]
 )
 
@@ -195,8 +206,9 @@ layout = dbc.Container(
 
 # GOOGLE PLAY SCRAPER FUNCTIONS
 @dash.callback(
-    Output('dl-temp-play', 'data'),
-    Output('dl-temp-play-none', 'data'),
+    Output('dl-play', 'data'),
+    # Output('dl-temp-play', 'data'),
+    # Output('dl-temp-play-none', 'data'),
     [
         Input('confirm-button-play', 'n_clicks'),
     ],
@@ -207,8 +219,8 @@ layout = dbc.Container(
         State('filters-derived', 'value') # added
     ],
     running=[
-        (Output("dl-button-play", "disabled"), True, False),
-        (Output("dl-button-play2", "disabled"), True, False),
+        # (Output("dl-button-play", "disabled"), True, False),
+        # (Output("dl-button-play2", "disabled"), True, False),
         (Output("dl-play-progress", "animated"), True, False),
     ],
     progress=[
@@ -229,6 +241,7 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
     if derived:
         if "descriptionGrammar" in derived:
             tool = language_tool_python.LanguageTool('en-US')
+            # tool = language_tool_python.LanguageToolPublicAPI('en-US') # use this if running the webapp locally
 
     for idx, app_id in enumerate(apps_ls):
         print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
@@ -347,23 +360,12 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
         if "descriptionGrammar" in derived:
             tool.close()
 
-    return full_play_ls, not_found2
+    #return full_play_ls, not_found2
 
-@dash.callback(
-    Output('dl-play', 'data'),
-    Input('dl-button-play', 'n_clicks'),
-    [
-        State('dl-temp-play', 'data'),
-        State('predict-checkbox', 'checked'),
-        State('filters-base', 'value'),
-        State('filters-derived', 'value')
-    ],
-    prevent_initial_call=True
-)
-def play_download(click, data, predict, base, derived):
+    df = pd.DataFrame(full_play_ls)
+
     if not base and not derived:
-        df = pd.DataFrame(data)
-        return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
+        filters = base
     elif not base:
         filters = derived
     elif not derived:
@@ -374,22 +376,80 @@ def play_download(click, data, predict, base, derived):
     if predict:
         filters = filters + ['educational_proba', 'violent_proba']
 
-    df = pd.DataFrame(data)
     df.drop(columns=df.columns.difference(filters), inplace=True)
 
-    return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
+    df2 = pd.DataFrame({"appId": not_found2})
+
+    # Using BytesIO to write to Excel format in memory
+    with io.BytesIO() as buffer:
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+            df.to_excel(writer, sheet_name='apps_found', index=False)
+            df2.to_excel(writer, sheet_name='not_found', index=False)
+
+            # Access the xlsxwriter workbook and worksheet objects
+            workbook  = writer.book
+            worksheet1 = writer.sheets['apps_found']
+            worksheet2 = writer.sheets['not_found']
+
+            # Define a format for wrapped text.
+            wrap_format = workbook.add_format({'text_wrap': True})
+
+            # Define a format to specify row height (e.g., 20)
+            row_format = workbook.add_format()
+            row_format.set_text_wrap(True)  # If you also want to wrap text
+            row_height = 100  # Adjust the height as necessary
+
+            # Set text wrap format and row height for non-header rows in both sheets
+            for row_num in range(1, len(df) + 1):  # Start from 1 to skip the header
+                worksheet1.set_row(row_num, row_height, wrap_format)
 
 
-@dash.callback(
-    Output('dl-play2', 'data'),
-    Input('dl-button-play2', 'n_clicks'),
-    State('dl-temp-play-none', 'data'),
-    prevent_initial_call=True
-)
-def play_download2(click, not_found):
-    df = pd.DataFrame({"appId": not_found})
 
-    return dcc.send_data_frame(df.to_csv, "play_features_not_found.csv", index=False)
+        # Important: You must seek back to the beginning of the buffer after writing
+        buffer.seek(0)
+        return dcc.send_bytes(buffer.getvalue(), "play_features.xlsx")
+
+# @dash.callback(
+#     Output('dl-play', 'data'),
+#     Input('dl-button-play', 'n_clicks'),
+#     [
+#         State('dl-temp-play', 'data'),
+#         State('predict-checkbox', 'checked'),
+#         State('filters-base', 'value'),
+#         State('filters-derived', 'value')
+#     ],
+#     prevent_initial_call=True
+# )
+# def play_download(click, data, predict, base, derived):
+#     if not base and not derived:
+#         df = pd.DataFrame(data)
+#         return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
+#     elif not base:
+#         filters = derived
+#     elif not derived:
+#         filters = base
+#     else:
+#         filters = base + derived
+
+#     if predict:
+#         filters = filters + ['educational_proba', 'violent_proba']
+
+#     df = pd.DataFrame(data)
+#     df.drop(columns=df.columns.difference(filters), inplace=True)
+
+#     return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
+
+
+# @dash.callback(
+#     Output('dl-play2', 'data'),
+#     Input('dl-button-play2', 'n_clicks'),
+#     State('dl-temp-play-none', 'data'),
+#     prevent_initial_call=True
+# )
+# def play_download2(click, not_found):
+#     df = pd.DataFrame({"appId": not_found})
+
+#     return dcc.send_data_frame(df.to_csv, "play_features_not_found.csv", index=False)
 
 
 
@@ -400,18 +460,19 @@ def play_download2(click, not_found):
 
 # APPLE SCRAPER FUNCTIONS
 @dash.callback(
-    Output('dl-temp-apple', 'data'),
-    Output('dl-temp-apple-none', 'data'),
+    Output('dl-apple', 'data'),
+    # Output('dl-temp-apple', 'data'),
+    # Output('dl-temp-apple-none', 'data'),
     [
         Input('confirm-button-apple', 'n_clicks'),
     ],
     [
-        State('predict-checkbox', 'checked'),
+        #State('predict-checkbox', 'checked'),
         State('dl-input-apple', 'value'),
     ],
     running=[
-        (Output("dl-button-apple", "disabled"), True, False),
-        (Output("dl-button-apple2", "disabled"), True, False),
+        #(Output("dl-button-apple", "disabled"), True, False),
+        #(Output("dl-button-apple2", "disabled"), True, False),
         (Output("dl-apple-progress", "animated"), True, False),
     ],
     progress=[
@@ -422,7 +483,7 @@ def play_download2(click, not_found):
     prevent_initial_call=True,
     background=True
 )
-def update_apple_info(set_progress, click, predict, apps):
+def update_apple_info(set_progress, click, apps):
     full_apple_ls = []
     not_found = []
     apps_ls = apps.split('\n')
@@ -430,10 +491,12 @@ def update_apple_info(set_progress, click, predict, apps):
     for idx, app_id in enumerate(apps_ls):
         print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
         set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
+        app_found = False
         try:
             app_info = Apple(app_id=app_id.strip())
             apple_details = app_info.get_details()
             time.sleep(0.5)
+            app_found = True
             #apple_reviews = app_info.get_reviews(sort='relevance')
 
             #play_info = play_features(play_details, play_reviews)
@@ -444,40 +507,98 @@ def update_apple_info(set_progress, click, predict, apps):
             #    apple_info['educational_proba'] = pred_e
             #    apple_info['violent_proba'] = pred_v
             #full_apple_ls.append(apple_info)
-            full_apple_ls.append(apple_details)
+            # full_apple_ls.append(apple_details)
         except Exception as e:
             print(e)
             not_found.append(app_id)
+
+        if app_found:
+            check = False
+            count = 0
+
+            while check == False and count < 30:
+                try:
+                    app = AppleApp(id=f"{app_id}")
+                    apple_details2 = app.get_app()
+
+                    if apple_details2:
+                        apple_details.update(apple_details2)
+                        full_apple_ls.append(apple_details)
+                        check = True
+                except Exception as e:
+                    print(e)
+
+                count += 1
+                time.sleep(1)
+
+            if count == 30:
+                full_apple_ls.append(apple_details)
+                print("hi")
+
+
         time.sleep(0.5)
 
-    return full_apple_ls, not_found
+    # return full_apple_ls, not_found
 
-@dash.callback(
-    Output('dl-apple', 'data'),
-    Input('dl-button-apple', 'n_clicks'),
-    [
-        State('dl-temp-apple', 'data'),
-        # State('predict-checkbox', 'checked'),
-        # State('filters-base', 'value'),
-        # State('filters-derived', 'value')
-    ],
-    prevent_initial_call=True
-)
-def apple_download(click, data):#, predict, base, derived):
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(full_apple_ls)
+    df2 = pd.DataFrame({"appId": not_found})
 
-    return dcc.send_data_frame(df.to_csv, "apple_features.csv", index=False)
+    # Using BytesIO to write to Excel format in memory
+    with io.BytesIO() as buffer:
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+            df.to_excel(writer, sheet_name='apps_found', index=False)
+            df2.to_excel(writer, sheet_name='not_found', index=False)
 
-@dash.callback(
-    Output('dl-apple2', 'data'),
-    Input('dl-button-apple2', 'n_clicks'),
-    State('dl-temp-apple-none', 'data'),
-    prevent_initial_call=True
-)
-def apple_download2(click, not_found):
-    df = pd.DataFrame({"appId": not_found})
+            # Access the xlsxwriter workbook and worksheet objects
+            workbook  = writer.book
+            worksheet1 = writer.sheets['apps_found']
+            worksheet2 = writer.sheets['not_found']
 
-    return dcc.send_data_frame(df.to_csv, "apple_features_not_found.csv", index=False)
+            # Define a format for wrapped text.
+            wrap_format = workbook.add_format({'text_wrap': True})
+
+            # Define a format to specify row height (e.g., 20)
+            row_format = workbook.add_format()
+            row_format.set_text_wrap(True)  # If you also want to wrap text
+            row_height = 100  # Adjust the height as necessary
+
+            # Set text wrap format and row height for non-header rows in both sheets
+            for row_num in range(1, len(df) + 1):  # Start from 1 to skip the header
+                worksheet1.set_row(row_num, row_height, wrap_format)
+
+
+
+        # Important: You must seek back to the beginning of the buffer after writing
+        buffer.seek(0)
+        return dcc.send_bytes(buffer.getvalue(), "apple_features.xlsx")
+
+
+# @dash.callback(
+#     Output('dl-apple', 'data'),
+#     Input('dl-button-apple', 'n_clicks'),
+#     [
+#         State('dl-temp-apple', 'data'),
+#         # State('predict-checkbox', 'checked'),
+#         # State('filters-base', 'value'),
+#         # State('filters-derived', 'value')
+#     ],
+#     prevent_initial_call=True
+# )
+# def apple_download(click, data):#, predict, base, derived):
+#     df = pd.DataFrame(data)
+
+#     return dcc.send_data_frame(df.to_csv, "apple_features.csv", index=False)
+
+# @dash.callback(
+#     Output('dl-apple2', 'data'),
+#     Input('dl-button-apple2', 'n_clicks'),
+#     State('dl-temp-apple-none', 'data'),
+#     prevent_initial_call=True
+# )
+# def apple_download2(click, not_found):
+#     df = pd.DataFrame({"appId": not_found})
+
+#     return dcc.send_data_frame(df.to_csv, "apple_features_not_found.csv", index=False)
 
 
 
@@ -490,10 +611,10 @@ def apple_download2(click, not_found):
 # YOUTUBE SCRAPER FUNCTIONS
 async def get_videos(click, apps):
     """
-    Function to get video details based on the list provided
+    Function to get video details based on the list provided.
+
     Parameters
     ----------
-    click - action
     apps (list) - video IDs
 
     Returns
@@ -534,10 +655,10 @@ async def get_videos(click, apps):
 )
 def get_vids(click, apps):
     """
-    Function to
+    Function to ().
+
     Parameters
     ----------
-    click - action
     apps (list) - list of video IDs
 
     Returns
@@ -559,10 +680,10 @@ def get_vids(click, apps):
 )
 def download_vid_info(click, data, filters):
     """
-    Function to
+    Function to ().
+
     Parameters
     ----------
-    click
     data (dict) - dictionary of video IDs and their details
 
     Returns
