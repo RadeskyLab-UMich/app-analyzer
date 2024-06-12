@@ -23,7 +23,12 @@ dash.register_page(__name__)
 features_play = ['title', 'appId', 'realInstalls', 'score', 'developer', 'version', 'description', 'ratings', 'reviews', 'price', 'free', 'currency', 'sale',
 'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released',
 'descriptionHTML', 'summary', 'installs', 'minInstalls', 'reviews', 'histogram', 'saleTime', 'originalPrice', 'saleText', 'developerEmail', 'developerWebsite', 'privacyPolicy',
-'categories', 'icon', 'headerImage', 'screenshots', 'video', 'videoImage', 'updated', 'comments', 'url']
+'categories', 'icon', 'headerImage', 'screenshots', 'video', 'videoImage', 'updated', 'comments', 'url',
+'privacy', 'collectsData', 'data_shared_location', 'data_shared_personal_info', 'data_shared_financial_info', 'data_shared_health_fitness', 'data_shared_messages', 'data_shared_photos_videos',
+'data_shared_audio_files', 'data_shared_files_docs', 'data_shared_calendar', 'data_shared_contacts', 'data_shared_contacts', 'data_shared_app_activity', 'data_shared_browsing_history',
+'data_shared_diagnostics', 'data_shared_identifiers', 'data_collected_location', 'data_collected_personal_info', 'data_collected_financial_info', 'data_collected_health_fitness',
+'data_collected_messages', 'data_collected_photos_videos', 'data_collected_audio_files', 'data_collected_files_docs', 'data_collected_calendar', 'data_collected_contacts', 'data_collected_app_activity',
+'data_collected_browsing_history', 'data_collected_diagnostics', 'data_collected_identifiers']
 
 features_derived_play = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar',
 'developerNApps', 'developerAppAgeMedian', 'developerCountry', 'releasedYear']
@@ -246,6 +251,7 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
     for idx, app_id in enumerate(apps_ls):
         print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
         set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
+        app_found = False
         try:
             app_info = Play(app_id=app_id.strip())
             play_info = app_info.get_details()
@@ -294,13 +300,38 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
                 except:
                     play_info["educational_proba"] = np.nan
                     play_info["violent_proba"] = np.nan
-            full_play_ls.append(play_info)
+            #full_play_ls.append(play_info)
+            app_found = True
         except Exception as e:
             print(e)
             not_found.append(app_id)
+
+        if app_found:
+            check = False
+            count = 0
+
+            while check == False and count < 30:
+                try:
+                    app = GoogleApp(app_id)
+                    play_info2 = app.get_app()
+
+                    if play_info2:
+                        play_info.update(play_info2)
+                        full_play_ls.append(play_info)
+                        check = True
+                except Exception as e:
+                    print(e)
+
+                count += 1
+                time.sleep(1)
+
+            if count == 30:
+                full_play_ls.append(play_info)
+
         time.sleep(0.5)
 
     for app_id in not_found:
+        app_found = False
         try:
             app_info = Play(app_id=app_id.strip())
             play_info = app_info.get_details()
@@ -350,10 +381,34 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
                 except:
                     play_info["educational_proba"] = np.nan
                     play_info["violent_proba"] = np.nan
-            full_play_ls.append(play_info)
+            #full_play_ls.append(play_info)
+            app_found = True
         except Exception as e:
             print(e)
             not_found2.append(app_id)
+
+        if app_found:
+            check = False
+            count = 0
+
+            while check == False and count < 30:
+                try:
+                    app = GoogleApp(app_id)
+                    play_info2 = app.get_app()
+
+                    if play_info2:
+                        play_info.update(play_info2)
+                        full_play_ls.append(play_info)
+                        check = True
+                except Exception as e:
+                    print(e)
+
+                count += 1
+                time.sleep(1)
+
+            if count == 30:
+                full_play_ls.append(play_info)
+
         time.sleep(0.5)
 
     if derived:
@@ -533,7 +588,6 @@ def update_apple_info(set_progress, click, apps):
 
             if count == 30:
                 full_apple_ls.append(apple_details)
-                print("hi")
 
 
         time.sleep(0.5)
