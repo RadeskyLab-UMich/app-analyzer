@@ -27,15 +27,7 @@ class GoogleApp:
         app = {}
         app["privacy"] = self.get_privacy_info()
 
-        if "doesn't collect or share any user data" not in app["privacy"][0]:
-            app["collectsData"] = True
-
-            for item in app["privacy"]:
-                if "Data shared" in item:
-                    app = self.get_privacy_info_shared(item, app)
-                if "Data collected" in item:
-                    app = self.get_privacy_info_collected(item, app)
-        else:
+        if "doesn't collect or share any user data" in app["privacy"][0]:
             app["collectsData"] = False
 
             app["data_shared_location"] = False
@@ -67,6 +59,25 @@ class GoogleApp:
             app["data_collected_browsing_history"] = False
             app["data_collected_diagnostics"] = False
             app["data_collected_identifiers"] = False
+        elif "Information about how this app collects and uses your data isn't available" in app["privacy"][0]:
+            return app
+        else:
+            app["collectsData"] = True
+            shared = 0
+            collected = 0
+
+            for item in app["privacy"]:
+                if "Data shared" in item:
+                    app = self.get_privacy_info_shared(item, app)
+                    shared = 1
+                if "Data collected" in item:
+                    app = self.get_privacy_info_collected(item, app)
+                    collected = 1
+
+            if shared == 0:
+                app = self.get_privacy_info_shared(item, app)
+            if collected == 0:
+                app = self.get_privacy_info_collected(item, app)
 
         return app
 

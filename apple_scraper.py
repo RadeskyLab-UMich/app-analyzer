@@ -45,6 +45,8 @@ class AppleApp:
 
         if "Data Not Collected" in app["privacy"][0]:
             app["CollectsData"] = False
+        elif "No Details Provided" in app["privacy"][0]:
+            return app
         else:
             app["CollectsData"] = True
 
@@ -100,13 +102,27 @@ class AppleApp:
             app["data_not_linked_surroundings"] = False
             app["data_not_linked_other_data"] = False
         else:
+            linked = 0
+            not_linked = 0
+            tracked = 0
+
             for item in app["privacy"]:
                 if "Data Used to Track You" in item:
                     app = self.get_privacy_info_track(item, app)
+                    tracked = 1
                 elif "Data Linked to You" in item:
                     app = self.get_privacy_info_linked(item, app)
+                    linked = 1
                 else:
                     app = self.get_privacy_info_not_linked(item, app)
+                    not_linked = 1
+
+            if tracked == 0:
+                app = self.get_privacy_info_track(app["privacy"][0], app)
+            if linked == 0:
+                app = self.get_privacy_info_linked(app["privacy"][0], app)
+            if not_linked == 0:
+                app = self.get_privacy_info_not_linked(app["privacy"][0], app)
 
         if all("Data Used to Track You" not in s for s in app["privacy"]):
             app["data_track_purchases"] = False
@@ -541,7 +557,8 @@ class AppleApp:
         return app
 
     def get_ranking(self):
-        if exists: pass
+        #if exists: pass
+        pass
 
     def get_ratings_score(self):
         """
