@@ -13,6 +13,7 @@ import language_tool_python
 from apple_scraper import AppleApp
 from play_scraper import GoogleApp
 import io
+from datetime import datetime
 
 dash.register_page(__name__)
 
@@ -20,15 +21,6 @@ dash.register_page(__name__)
 
 
 
-features_play = ['title', 'appId', 'realInstalls', 'score', 'developer', 'version', 'description', 'ratings', 'reviews', 'price', 'free', 'currency', 'sale',
-'offersIAP', 'inAppProductPrice', 'developerId', 'developerAddress', 'genre', 'genreId', 'contentRating', 'contentRatingDescription', 'adSupported', 'containsAds', 'released',
-'descriptionHTML', 'summary', 'installs', 'minInstalls', 'reviews', 'histogram', 'saleTime', 'originalPrice', 'saleText', 'developerEmail', 'developerWebsite', 'privacyPolicy',
-'categories', 'icon', 'headerImage', 'screenshots', 'video', 'videoImage', 'updated', 'comments', 'url',
-'privacy', 'collectsData', 'data_shared_location', 'data_shared_personal_info', 'data_shared_financial_info', 'data_shared_health_fitness', 'data_shared_messages', 'data_shared_photos_videos',
-'data_shared_audio_files', 'data_shared_files_docs', 'data_shared_calendar', 'data_shared_contacts', 'data_shared_contacts', 'data_shared_app_activity', 'data_shared_browsing_history',
-'data_shared_diagnostics', 'data_shared_identifiers', 'data_collected_location', 'data_collected_personal_info', 'data_collected_financial_info', 'data_collected_health_fitness',
-'data_collected_messages', 'data_collected_photos_videos', 'data_collected_audio_files', 'data_collected_files_docs', 'data_collected_calendar', 'data_collected_contacts', 'data_collected_app_activity',
-'data_collected_browsing_history', 'data_collected_diagnostics', 'data_collected_identifiers']
 
 features_derived_play = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar',
 'developerNApps', 'developerAppAgeMedian', 'developerCountry', 'releasedYear']
@@ -45,12 +37,9 @@ play_tab = dbc.Container(
         dbc.Row(
         [
             dbc.Col(
-                dcc.Dropdown(sorted(features_play), value=['title', 'appId'], persistence=True, multi=True, placeholder="Select base features", id="filters-base")
+                dcc.Dropdown(sorted(features_derived_play), persistence=True, multi=True, placeholder="Select Derived Features", id="filters-derived")
             ),
-            dbc.Col(
-                dcc.Dropdown(sorted(features_derived_play), persistence=True, multi=True, placeholder="Select derived features", id="filters-derived")
-            ),
-            dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include predictions"), width="auto")
+            dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include Predictions"), width="auto")
         ],
         class_name="g-2 ms-auto flex-wrap mx-auto",
         align="center",
@@ -70,30 +59,14 @@ play_tab = dbc.Container(
                     ],
                     width="auto"
                 ),
-                # dbc.Col(
-                #     [
-                #         dbc.Button("Download as CSV", color="secondary", id="dl-button-play", n_clicks=0, disabled=True),
-                #         dcc.Download(id="dl-play")
-                #     ],
-                #     width="auto"
-                # ),
                 dbc.Col(
                     dbc.Progress(id="dl-play-progress", style={"height": "2rem"}, animated=True, striped=True),
                     width=3
                 ),
-                # dbc.Col(
-                #     [
-                #         dbc.Button("Download Missing IDs", color="success", id="dl-button-play2", n_clicks=0, disabled=True),
-                #         dcc.Download(id="dl-play2")
-                #     ],
-                #     width="auto"
-                # ),
             ],
             class_name="g-2",
             align='center'
         ),
-        # dcc.Store(id="dl-temp-play", storage_type='session'),
-        # dcc.Store(id="dl-temp-play-none", storage_type='session')
     ]
 )
 
@@ -114,29 +87,13 @@ apple_tab = dbc.Container(
                     ],
                     width="auto"
                 ),
-                # dbc.Col(
-                #     [
-                #         dbc.Button("Download as CSV", color="secondary", id="dl-button-apple", n_clicks=0, disabled=True),
-                #         dcc.Download(id="dl-apple")
-                #     ],
-                #     width="auto"
-                # ),
                 dbc.Col(
                     dbc.Progress(id="dl-apple-progress", style={"height": "2rem"}, animated=True, striped=True),
                     width=3
                 ),
-                # dbc.Col(
-                #     [
-                #         dbc.Button("Download Missing IDs", color="success", id="dl-button-apple2", n_clicks=0, disabled=True),
-                #         dcc.Download(id="dl-apple2")
-                #     ],
-                #     width="auto"
-                # )
             ],
             class_name="g-1"
         ),
-        #dcc.Store(id="dl-temp-apple", storage_type='session'),
-        #dcc.Store(id="dl-temp-apple-none", storage_type='session')
     ]
 )
 
@@ -147,7 +104,7 @@ you_tab = dbc.Container(
         dbc.Row(
         [
             dbc.Col(
-                dcc.Dropdown(sorted(features_tube), value=['title', 'video_id'], persistence=True, multi=True, placeholder="Select features", id="you-filters")
+                dcc.Dropdown(sorted(features_tube), value=['title', 'video_id'], persistence=True, multi=True, placeholder="Select Features", id="you-filters")
             ),
         ],
         class_name="g-2 ms-auto flex-wrap mx-auto",
@@ -162,25 +119,16 @@ you_tab = dbc.Container(
         dbc.Row(
             [
                 dbc.Col(
-                    dbc.Button("Confirm", color="primary", id="confirm-button-you", n_clicks=0),
-                    width="auto"
-                ),
-                dbc.Col(
                     [
-                        dbc.Button("Download as CSV", color="secondary", id="dl-button-you", n_clicks=0, disabled=True),
-                        dcc.Download(id="dl-you")
+                    dbc.Button("Download", color="primary", id="confirm-button-you", n_clicks=0),
+                    dcc.Download(id="dl-you")
                     ],
                     width="auto"
                 ),
-                # dbc.Col(
-                #     dbc.Progress(id="dl-you-progress", style={"height": "2rem"}, animated=True, striped=True),
-                #     width=3
-                # )
             ],
             class_name="g-2",
             align='center'
         ),
-        dcc.Store(id="dl-temp-you", storage_type='session')
     ]
 )
 
@@ -208,7 +156,7 @@ layout = dbc.Container(
 
 
 
-
+########################################################################
 # GOOGLE PLAY SCRAPER FUNCTIONS
 @dash.callback(
     Output('dl-play', 'data'),
@@ -220,7 +168,7 @@ layout = dbc.Container(
     [
         State('predict-checkbox', 'checked'),
         State('dl-input-play', 'value'),
-        State('filters-base', 'value'), # added
+        # State('filters-base', 'value'), # added
         State('filters-derived', 'value') # added
     ],
     running=[
@@ -236,7 +184,19 @@ layout = dbc.Container(
     prevent_initial_call=True,
     background=True
 )
-def update_play_info(set_progress, click, predict, apps, base, derived):
+def update_play_info(set_progress, click, predict, apps, derived): # , base):
+    """
+    Function to scrape data on Google Play apps and download them in an .xlsx file.
+
+    Parameters
+    ----------
+    apps (str) - string of video IDs
+
+    Returns
+    -------
+    df (download) - dataframe of the scraped app ID information
+    """
+
     full_play_ls = []
     not_found = []
     not_found2 = []
@@ -300,7 +260,7 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
                 except:
                     play_info["educational_proba"] = np.nan
                     play_info["violent_proba"] = np.nan
-            #full_play_ls.append(play_info)
+
             app_found = True
         except Exception as e:
             print(e)
@@ -381,7 +341,7 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
                 except:
                     play_info["educational_proba"] = np.nan
                     play_info["violent_proba"] = np.nan
-            #full_play_ls.append(play_info)
+
             app_found = True
         except Exception as e:
             print(e)
@@ -415,23 +375,17 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
         if "descriptionGrammar" in derived:
             tool.close()
 
-    #return full_play_ls, not_found2
 
     df = pd.DataFrame(full_play_ls)
+    df.drop(columns=['icon', 'headerImage', 'screenshots', 'video', 'videoImage', 'descriptionHTML'], inplace=True)
 
-    if not base and not derived:
-        filters = base
-    elif not base:
-        filters = derived
-    elif not derived:
-        filters = base
-    else:
-        filters = base + derived
+    today = datetime.now()
+    formatted_date = today.strftime("%m/%d/%Y")
+    df["date_scraped"] = formatted_date
 
-    if predict:
-        filters = filters + ['educational_proba', 'violent_proba']
+    first_column = df.pop('date_scraped')
+    df.insert(0, 'date_scraped', first_column)
 
-    df.drop(columns=df.columns.difference(filters), inplace=True)
 
     df2 = pd.DataFrame({"appId": not_found2})
 
@@ -464,47 +418,6 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
         buffer.seek(0)
         return dcc.send_bytes(buffer.getvalue(), "play_features.xlsx")
 
-# @dash.callback(
-#     Output('dl-play', 'data'),
-#     Input('dl-button-play', 'n_clicks'),
-#     [
-#         State('dl-temp-play', 'data'),
-#         State('predict-checkbox', 'checked'),
-#         State('filters-base', 'value'),
-#         State('filters-derived', 'value')
-#     ],
-#     prevent_initial_call=True
-# )
-# def play_download(click, data, predict, base, derived):
-#     if not base and not derived:
-#         df = pd.DataFrame(data)
-#         return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
-#     elif not base:
-#         filters = derived
-#     elif not derived:
-#         filters = base
-#     else:
-#         filters = base + derived
-
-#     if predict:
-#         filters = filters + ['educational_proba', 'violent_proba']
-
-#     df = pd.DataFrame(data)
-#     df.drop(columns=df.columns.difference(filters), inplace=True)
-
-#     return dcc.send_data_frame(df.to_csv, "play_features.csv", index=False)
-
-
-# @dash.callback(
-#     Output('dl-play2', 'data'),
-#     Input('dl-button-play2', 'n_clicks'),
-#     State('dl-temp-play-none', 'data'),
-#     prevent_initial_call=True
-# )
-# def play_download2(click, not_found):
-#     df = pd.DataFrame({"appId": not_found})
-
-#     return dcc.send_data_frame(df.to_csv, "play_features_not_found.csv", index=False)
 
 
 
@@ -513,11 +426,10 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
 
 
 
+########################################################################
 # APPLE SCRAPER FUNCTIONS
 @dash.callback(
     Output('dl-apple', 'data'),
-    # Output('dl-temp-apple', 'data'),
-    # Output('dl-temp-apple-none', 'data'),
     [
         Input('confirm-button-apple', 'n_clicks'),
     ],
@@ -526,8 +438,6 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
         State('dl-input-apple', 'value'),
     ],
     running=[
-        #(Output("dl-button-apple", "disabled"), True, False),
-        #(Output("dl-button-apple2", "disabled"), True, False),
         (Output("dl-apple-progress", "animated"), True, False),
     ],
     progress=[
@@ -539,6 +449,18 @@ def update_play_info(set_progress, click, predict, apps, base, derived):
     background=True
 )
 def update_apple_info(set_progress, click, apps):
+    """
+    Function to scrape data on Apple iTunes store items such as apps and download them in an .xlsx file.
+
+    Parameters
+    ----------
+    apps (str) - string of app/song/etc. IDs
+
+    Returns
+    -------
+    df (download) - dataframe of the scraped ID information
+    """
+
     full_apple_ls = []
     not_found = []
     apps_ls = apps.split('\n')
@@ -552,17 +474,6 @@ def update_apple_info(set_progress, click, apps):
             apple_details = app_info.get_details()
             time.sleep(0.5)
             app_found = True
-            #apple_reviews = app_info.get_reviews(sort='relevance')
-
-            #play_info = play_features(play_details, play_reviews)
-            #apple_info = play_features(apple_details, apple_reviews)
-            #if predict:
-            #    pred_e = generate_predictions(apple_info, 'educational')
-            #    pred_v = generate_predictions(apple_info, 'violent')
-            #    apple_info['educational_proba'] = pred_e
-            #    apple_info['violent_proba'] = pred_v
-            #full_apple_ls.append(apple_info)
-            # full_apple_ls.append(apple_details)
         except Exception as e:
             print(e)
             not_found.append(app_id)
@@ -592,9 +503,17 @@ def update_apple_info(set_progress, click, apps):
 
         time.sleep(0.5)
 
-    # return full_apple_ls, not_found
 
     df = pd.DataFrame(full_apple_ls)
+    df.drop(columns=['ipadScreenshotUrls', 'appletvScreenshotUrls', 'artworkUrl60', 'artworkUrl512', 'artworkUrl100', 'screenshotUrls'], inplace=True)
+
+    today = datetime.now()
+    formatted_date = today.strftime("%m/%d/%Y")
+    df["date_scraped"] = formatted_date
+
+    first_column = df.pop('date_scraped')
+    df.insert(0, 'date_scraped', first_column)
+
     df2 = pd.DataFrame({"appId": not_found})
 
     # Using BytesIO to write to Excel format in memory
@@ -627,32 +546,6 @@ def update_apple_info(set_progress, click, apps):
         return dcc.send_bytes(buffer.getvalue(), "apple_features.xlsx")
 
 
-# @dash.callback(
-#     Output('dl-apple', 'data'),
-#     Input('dl-button-apple', 'n_clicks'),
-#     [
-#         State('dl-temp-apple', 'data'),
-#         # State('predict-checkbox', 'checked'),
-#         # State('filters-base', 'value'),
-#         # State('filters-derived', 'value')
-#     ],
-#     prevent_initial_call=True
-# )
-# def apple_download(click, data):#, predict, base, derived):
-#     df = pd.DataFrame(data)
-
-#     return dcc.send_data_frame(df.to_csv, "apple_features.csv", index=False)
-
-# @dash.callback(
-#     Output('dl-apple2', 'data'),
-#     Input('dl-button-apple2', 'n_clicks'),
-#     State('dl-temp-apple-none', 'data'),
-#     prevent_initial_call=True
-# )
-# def apple_download2(click, not_found):
-#     df = pd.DataFrame({"appId": not_found})
-
-#     return dcc.send_data_frame(df.to_csv, "apple_features_not_found.csv", index=False)
 
 
 
@@ -660,8 +553,7 @@ def update_apple_info(set_progress, click, apps):
 
 
 
-
-
+########################################################################
 # YOUTUBE SCRAPER FUNCTIONS
 async def get_videos(click, apps):
     """
@@ -669,11 +561,11 @@ async def get_videos(click, apps):
 
     Parameters
     ----------
-    apps (list) - video IDs
+    apps (str) - video IDs
 
     Returns
     -------
-    list - video details
+    df - dataframe of thevideo details
 
     """
     scraper = YoutubeScraper()
@@ -687,18 +579,17 @@ async def get_videos(click, apps):
 
 
 @dash.callback(
-    Output('dl-temp-you', 'data'),
+    Output('dl-you', 'data'),
     [
         Input('confirm-button-you', 'n_clicks'),
     ],
     [
         State('dl-input-you', 'value'),
+        State('you-filters', 'value')
     ],
-    running=[
-        (Output("dl-button-you", "disabled"), True, False),
-        #(Output("dl-button-you", "color"), "green"),
-        #(Output("dl-you-progress", "animated"), True, False),
-    ],
+    # running=[
+        # (Output("dl-you-progress", "animated"), True, False),
+    # ],
     # progress=[
     #     Output("dl-you-progress", "value"),
     #     Output("dl-you-progress", "label"),
@@ -707,47 +598,38 @@ async def get_videos(click, apps):
     prevent_initial_call=True,
     background=True
 )
-def get_vids(click, apps):
+def update_youtube_info(click, apps, filters):
     """
-    Function to ().
+    Function to scrape data on YouTube videos and download them in an .xlsx file.
 
     Parameters
     ----------
-    apps (list) - list of video IDs
+    apps (str) - string of video IDs
 
     Returns
     -------
-    dict - dictionary of video IDs and their details
+    df (download) - dataframe of the scraped video ID information
     """
-    return asyncio.run(get_videos(click, apps)).to_dict()
 
+    df = asyncio.run(get_videos(click, apps))
 
+    #  not_found = [item for item in apps.split("\n") if item not in df["video_id"].to_list()]
 
-@dash.callback(
-    Output('dl-you', 'data'),
-    Input('dl-button-you', 'n_clicks'),
-    [
-        State('dl-temp-you', 'data'),
-        State('you-filters', 'value')
-    ],
-    prevent_initial_call=True
-)
-def download_vid_info(click, data, filters):
-    """
-    Function to ().
-
-    Parameters
-    ----------
-    data (dict) - dictionary of video IDs and their details
-
-    Returns
-    -------
-    download - csv of the video IDs and their details
-    """
     if not filters:
-        df = pd.DataFrame(data)
-        return dcc.send_data_frame(df.to_csv, "youtube_features.csv", index=False)
+        today = datetime.now()
+        formatted_date = today.strftime("%m/%d/%Y")
+        df["date_scraped"] = formatted_date
 
-    df = pd.DataFrame(data)
-    df.drop(columns=df.columns.difference(filters), inplace=True)
-    return dcc.send_data_frame(df.to_csv, "youtube_features.csv", index=False)
+        first_column = df.pop('date_scraped')
+        df.insert(0, 'date_scraped', first_column)
+        return dcc.send_data_frame(df.to_excel, "youtube_features.xlsx", index=False)
+    else:
+        df.drop(columns=df.columns.difference(filters), inplace=True)
+
+        today = datetime.now()
+        formatted_date = today.strftime("%m/%d/%Y")
+        df["date_scraped"] = formatted_date
+
+        first_column = df.pop('date_scraped')
+        df.insert(0, 'date_scraped', first_column)
+        return dcc.send_data_frame(df.to_excel, "youtube_features.xlsx", index=False)
