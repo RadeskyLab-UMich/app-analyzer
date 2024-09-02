@@ -240,7 +240,8 @@ def process_developer(id, store="play"):
             developer_soup = BeautifulSoup(developer_content, 'html.parser')
             developer_apps = developer_soup.select('.fUEl2e > div > div > div > div > a')
         else:
-            raise ValueError("Developer ID not found.")
+            # raise ValueError("Developer ID not found.")
+            return np.nan, np.nan
         n_apps = len(developer_apps)
         app_ids = list(map(lambda x: x['href'].split('?id=')[1], developer_apps))
         app_ages = []
