@@ -260,7 +260,7 @@ class AppleApp:
 
         if iap:
             titles = self.soup.findAll("span", attrs={"class":"truncate-single-line truncate-single-line--block"})
-            prices = self.soup.findAll("span", attrs={"class":"list-with-numbers__item__price small-hide medium-show-tablecell"})
+            prices = self.soup.findAll("span", attrs={"class":"list-with-numbers__item__price medium-show-tablecell"})
             for title, price in zip(titles, prices):
                 combined[title.text] = price.text
 
@@ -614,7 +614,7 @@ class AppleApp:
         print(data)
 
 
-# test = App(id="1556715867")
+# test = AppleApp(id="1287282214")
 # print(test.url)
 # print(test.soup)
 # print(test.get_app())
