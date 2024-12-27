@@ -20,14 +20,6 @@ dash.register_page(__name__)
 
 
 
-
-
-features_derived_play = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar',
-'developerNApps', 'developerAppAgeMedian', 'developerCountry', 'releasedYear']
-
-features_derived_apple = ['ratingsStd', 'ratingsSkew', 'descriptionSentiment', 'reviewsSentiment', 'descriptionReadability', 'descriptionGrammar',
-'developerNApps', 'developerAppAgeMedian', 'developerCountry', 'releasedYear']
-
 features_tube = ['video_id', 'unavailable', 'private', 'requires_payment', 'is_livestream_recording_not_available', 'livestream_recording_not_available',
             'title', 'description', 'view_count', 'length_seconds', 'channel_name', 'channel_id', 'channel_url', 'family_safe', 'unlisted', 'live_content',
             'removed', 'category', 'upload_date', 'publish_date', 'video_recommendations']
@@ -36,18 +28,6 @@ features_tube = ['video_id', 'unavailable', 'private', 'requires_payment', 'is_l
 # GOOGLE PLAY TAB CONFIGURATION
 play_tab = dbc.Container(
     [
-        html.Br(),
-        dbc.Row(
-        [
-            dbc.Col(
-                dcc.Dropdown(sorted(features_derived_play), persistence=True, multi=True, placeholder="Select Derived Features", id="filters-derived-play")
-            ),
-            dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include Predictions"), width="auto")
-        ],
-        class_name="g-2 ms-auto flex-wrap mx-auto",
-        align="center",
-        style={"width": "1000px"}
-        ),
         html.Br(),
         dbc.Textarea(
             className="mb-3", style={"height": "20rem"}, id="dl-input-play",
@@ -76,18 +56,6 @@ play_tab = dbc.Container(
 # APPLE TAB CONFIGURATION
 apple_tab = dbc.Container(
     [
-        html.Br(),
-        # dbc.Row(
-        # [
-        #     dbc.Col(
-        #         dcc.Dropdown(sorted(features_derived_apple), persistence=True, multi=True, placeholder="Select Derived Features", id="filters-derived-apple")
-        #     ),
-        #     # dbc.Col(dmc.Checkbox(id="predict-checkbox", label="Include Predictions"), width="auto")
-        # ],
-        # class_name="g-2 ms-auto flex-wrap mx-auto",
-        # align="center",
-        # style={"width": "1000px"}
-        # ),
         html.Br(),
         dbc.Textarea(
             className="mb-3", style={"height": "20rem"}, id="dl-input-apple",
@@ -175,20 +143,13 @@ layout = dbc.Container(
 # GOOGLE PLAY SCRAPER FUNCTIONS
 @dash.callback(
     Output('dl-play', 'data'),
-    # Output('dl-temp-play', 'data'),
-    # Output('dl-temp-play-none', 'data'),
     [
         Input('confirm-button-play', 'n_clicks'),
     ],
     [
-        State('predict-checkbox', 'checked'),
         State('dl-input-play', 'value'),
-        # State('filters-base', 'value'), # added
-        State('filters-derived-play', 'value') # added
     ],
     running=[
-        # (Output("dl-button-play", "disabled"), True, False),
-        # (Output("dl-button-play2", "disabled"), True, False),
         (Output("dl-play-progress", "animated"), True, False),
     ],
     progress=[
@@ -199,7 +160,7 @@ layout = dbc.Container(
     prevent_initial_call=True,
     background=True
 )
-def update_play_info(set_progress, click, predict, apps, derived): # , base):
+def update_play_info(set_progress, click, apps):
     """
     Function to scrape data on Google Play apps and download them in an .xlsx file.
 
@@ -218,10 +179,6 @@ def update_play_info(set_progress, click, predict, apps, derived): # , base):
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
 
-    if derived:
-        if "descriptionGrammar" in derived:
-            tool = language_tool_python.LanguageTool('en-US')
-            # tool = language_tool_python.LanguageToolPublicAPI('en-US') # use this if running the webapp locally
 
     for idx, app_id in enumerate(apps_ls):
         print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
@@ -231,51 +188,6 @@ def update_play_info(set_progress, click, predict, apps, derived): # , base):
             app_info = Play(app_id=app_id.strip())
             play_info = app_info.get_details()
             time.sleep(0.5)
-            if derived:
-                if "reviewsSentiment" in derived: # added
-                    reviews = app_info.get_reviews(sort='relevance')
-                    if len(reviews) > 0:
-                        play_info['reviewsSentiment'] = process_reviews_sentiment(reviews)
-                    else:
-                        play_info['reviewsSentiment'] = np.nan
-
-                if "ratingsStd" in derived or "ratingsSkew" in derived: # added
-                    # process histogram
-                    reviews_dist = np.concatenate([np.full(n, i+1) for i, n in enumerate(play_info['histogram'])])
-
-                    if len(reviews_dist) > 0:
-                        play_info['ratingsStd'] = round(np.std(reviews_dist), 4)
-                        play_info['ratingsSkew'] = round(skew(reviews_dist, nan_policy='omit'), 4)
-                    else:
-                        play_info['ratingsStd'] = np.nan
-                        play_info['ratingsSkew'] = np.nan
-
-                if "descriptionGrammar" in derived:
-                    matches = tool.check(play_info["description"])
-                    play_info['descriptionGrammar'] = round((len(play_info["description"]) - len(matches))/len(play_info["description"]) * 100, 2)
-                if "descriptionReadability" in derived:
-                    play_info['descriptionReadability'] = textstat.flesch_kincaid_grade(play_info['description'])
-                if "descriptionSentiment" in derived:
-                    sia = SentimentIntensityAnalyzer()
-                    play_info['descriptionSentiment'] = sia.polarity_scores(process_text(play_info['description']))['compound']
-                if "developerCountry" in derived:
-                    play_info['developerCountry'] = process_address(play_info['developerAddress'])
-                if "developerNApps" in derived or "developerAppAgeMedian" in derived:
-                    play_info['developerNApps'], play_info['developerAppAgeMedian'] = process_developer(play_info['developerId'])
-                if play_info['released']:
-                    play_info['releasedYear'] = int(play_info['released'][-4:])
-                    play_info['releasedYears'] = datetime.now().year - play_info['releasedYear']
-
-            if predict:
-                try:
-                    pred_e = generate_predictions(play_info, 'educational')
-                    pred_v = generate_predictions(play_info, 'violent')
-                    play_info['educational_proba'] = pred_e
-                    play_info['violent_proba'] = pred_v
-                except:
-                    play_info["educational_proba"] = np.nan
-                    play_info["violent_proba"] = np.nan
-
             app_found = True
         except Exception as e:
             print(e)
@@ -311,52 +223,6 @@ def update_play_info(set_progress, click, predict, apps, derived): # , base):
             app_info = Play(app_id=app_id.strip())
             play_info = app_info.get_details()
             time.sleep(0.5)
-
-            if derived:
-                if "reviewsSentiment" in derived: # added
-                    reviews = app_info.get_reviews(sort='relevance')
-                    if len(reviews) > 0:
-                        play_info['reviewsSentiment'] = process_reviews_sentiment(reviews)
-                    else:
-                        play_info['reviewsSentiment'] = np.nan
-
-                if "ratingsStd" in derived or "ratingsSkew" in derived: # added
-                    # process histogram
-                    reviews_dist = np.concatenate([np.full(n, i+1) for i, n in enumerate(play_info['histogram'])])
-
-                    if len(reviews_dist) > 0:
-                        play_info['ratingsStd'] = round(np.std(reviews_dist), 4)
-                        play_info['ratingsSkew'] = round(skew(reviews_dist, nan_policy='omit'), 4)
-                    else:
-                        play_info['ratingsStd'] = np.nan
-                        play_info['ratingsSkew'] = np.nan
-
-                if "descriptionGrammar" in derived:
-                    matches = tool.check(play_info["description"])
-                    play_info['descriptionGrammar'] = round((len(play_info["description"]) - len(matches))/len(play_info["description"]) * 100, 2)
-                if "descriptionReadability" in derived:
-                    play_info['descriptionReadability'] = textstat.flesch_kincaid_grade(play_info['description'])
-                if "descriptionSentiment" in derived:
-                    sia = SentimentIntensityAnalyzer()
-                    play_info['descriptionSentiment'] = sia.polarity_scores(process_text(play_info['description']))['compound']
-                if "developerCountry" in derived:
-                    play_info['developerCountry'] = process_address(play_info['developerAddress'])
-                if "developerNApps" in derived or "developerAppAgeMedian" in derived:
-                    play_info['developerNApps'], play_info['developerAppAgeMedian'] = process_developer(play_info['developerId'])
-                if play_info['released']:
-                    play_info['releasedYear'] = int(play_info['released'][-4:])
-                    play_info['releasedYears'] = datetime.now().year - play_info['releasedYear']
-
-            if predict:
-                try:
-                    pred_e = generate_predictions(play_info, 'educational')
-                    pred_v = generate_predictions(play_info, 'violent')
-                    play_info['educational_proba'] = pred_e
-                    play_info['violent_proba'] = pred_v
-                except:
-                    play_info["educational_proba"] = np.nan
-                    play_info["violent_proba"] = np.nan
-
             app_found = True
         except Exception as e:
             print(e)
@@ -386,10 +252,6 @@ def update_play_info(set_progress, click, predict, apps, derived): # , base):
 
         time.sleep(0.5)
 
-    if derived:
-        if "descriptionGrammar" in derived:
-            tool.close()
-
 
     df = pd.DataFrame(full_play_ls)
     if "icon" in df:
@@ -404,7 +266,10 @@ def update_play_info(set_progress, click, predict, apps, derived): # , base):
         df.drop(columns=["videoImage"], inplace=True)
     if "descriptionHTML" in df:
         df.drop(columns=["descriptionHTML"], inplace=True)
-    # df.drop(columns=['icon', 'headerImage', 'screenshots', 'video', 'videoImage', 'descriptionHTML'], inplace=True)
+    if "developerWebsite" in df:
+        df.drop(columns=["developerWebsite"], inplace=True)
+    if "privacyPolicy" in df:
+        df.drop(columns=["privacyPolicy"], inplace=True)
 
     today = datetime.now()
     formatted_date = today.strftime("%m/%d/%Y")
@@ -461,9 +326,7 @@ def update_play_info(set_progress, click, predict, apps, derived): # , base):
         Input('confirm-button-apple', 'n_clicks'),
     ],
     [
-        #State('predict-checkbox', 'checked'),
         State('dl-input-apple', 'value'),
-        # State('filters-derived-apple', 'value') # added
     ],
     running=[
         (Output("dl-apple-progress", "animated"), True, False),
@@ -476,7 +339,7 @@ def update_play_info(set_progress, click, predict, apps, derived): # , base):
     prevent_initial_call=True,
     background=True
 )
-def update_apple_info(set_progress, click, apps): # , derived):
+def update_apple_info(set_progress, click, apps):
     """
     Function to scrape data on Apple iTunes store items such as apps and download them in an .xlsx file.
 
@@ -503,17 +366,6 @@ def update_apple_info(set_progress, click, apps): # , derived):
             app_info = Apple(app_id=app_id.strip())
             apple_details = app_info.get_details()
             time.sleep(0.5)
-
-            # print(apple_details)
-
-            # if derived:
-            #     if "reviewsSentiment" in derived: # added
-            #             reviews = app_info.get_reviews(sort='relevance')
-            #             if len(reviews) > 0:
-            #                 apple_details['reviewsSentiment'] = process_reviews_sentiment(reviews)
-            #             else:
-            #                 apple_details['reviewsSentiment'] = np.nan
-
             app_found = True
         except Exception as e:
             print(e)
@@ -551,17 +403,6 @@ def update_apple_info(set_progress, click, apps): # , derived):
             app_info = Apple(app_id=app_id.strip())
             apple_details = app_info.get_details()
             time.sleep(0.5)
-
-            # print(apple_details)
-
-            # if derived:
-            #     if "reviewsSentiment" in derived: # added
-            #             reviews = app_info.get_reviews(sort='relevance')
-            #             if len(reviews) > 0:
-            #                 apple_details['reviewsSentiment'] = process_reviews_sentiment(reviews)
-            #             else:
-            #                 apple_details['reviewsSentiment'] = np.nan
-
             app_found = True
         except Exception as e:
             print(e)
@@ -593,7 +434,7 @@ def update_apple_info(set_progress, click, apps): # , derived):
         time.sleep(0.5)
 
     df = pd.DataFrame(full_apple_ls)
-    # print(df)
+
     if "ipadScreenshotUrls" in df:
         df.drop(columns=["ipadScreenshotUrls"], inplace=True)
     if "appletvScreenshotUrls" in df:
@@ -606,7 +447,12 @@ def update_apple_info(set_progress, click, apps): # , derived):
         df.drop(columns=["artworkUrl100"], inplace=True)
     if "screenshotUrls" in df:
         df.drop(columns=["screenshotUrls"], inplace=True)
-    # df.drop(columns=['ipadScreenshotUrls', 'appletvScreenshotUrls', 'artworkUrl60', 'artworkUrl512', 'artworkUrl100', 'screenshotUrls'], inplace=True)
+    if "artistViewUrl" in df:
+        df.drop(columns=["artistViewUrl"], inplace=True)
+    if "sellerUrl" in df:
+        df.drop(columns=["sellerUrl"], inplace=True)
+    if "sellerUrl" in df:
+        df.drop(columns=["sellerUrl"], inplace=True)
 
     today = datetime.now()
     formatted_date = today.strftime("%m/%d/%Y")
@@ -688,14 +534,6 @@ async def get_videos(click, apps):
         State('dl-input-you', 'value'),
         State('you-filters', 'value')
     ],
-    # running=[
-        # (Output("dl-you-progress", "animated"), True, False),
-    # ],
-    # progress=[
-    #     Output("dl-you-progress", "value"),
-    #     Output("dl-you-progress", "label"),
-    #     Output("dl-you-progress", "max")
-    # ],
     prevent_initial_call=True,
     background=True
 )
@@ -713,8 +551,6 @@ def update_youtube_info(click, apps, filters):
     """
 
     df = asyncio.run(get_videos(click, apps))
-
-    #  not_found = [item for item in apps.split("\n") if item not in df["video_id"].to_list()]
 
     if not filters:
         today = datetime.now()
