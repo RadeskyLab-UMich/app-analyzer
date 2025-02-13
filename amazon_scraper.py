@@ -574,4 +574,7 @@ class AmazonApp:
         -------
         str of app url
         """
-        return f"https://www.amazon.com/dp/{self.id}"
+        if "." not in self.id:
+            return f"https://www.amazon.com/dp/{self.id}"
+        else:
+            return f"https://www.amazon.com/dp/{self.asin}"
