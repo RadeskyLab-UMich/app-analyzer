@@ -20,6 +20,7 @@ class AmazonApp:
         else:
             self.url = requests.get(f"https://www.amazon.com/s?k={self.id}&i=mobile-apps", headers=HEADERS)
             self.soup = BeautifulSoup(self.url.content, "html.parser", from_encoding='utf-8')
+            print(self.soup.get_text())
 
             if f"No results for {self.id} in Apps & Games" in self.soup.get_text():
                 self.app_issue = True
