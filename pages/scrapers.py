@@ -14,6 +14,8 @@ from apple_scraper import AppleApp
 from amazon_scraper import AmazonApp
 from play_scraper import GoogleApp
 from youtube_scraper import *
+import google.cloud.logging
+import logging
 
 
 dash.register_page(__name__)
@@ -477,6 +479,8 @@ def update_play_info(set_progress, click, apps):
     -------
     df (download) - dataframe of the scraped app ID information
     """
+    client = google.cloud.logging.Client()
+    client.setup_logging()
 
     full_play_ls = []
     not_found = []
@@ -486,7 +490,8 @@ def update_play_info(set_progress, click, apps):
 
 
     for idx, app_id in enumerate(apps_ls):
-        print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
+        t1 = f"Fetching {idx + 1}/{n_apps}: {app_id}"
+        logging.warning(t1)
         set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
         app_found = False
         try:
