@@ -4,51 +4,16 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 from api import Play, Apple
-from utils import *
 
 dash.register_page(__name__, path='/')
 
-search_bar = dbc.Row(
-    [
-        dbc.Col(
-            html.Div(
-                [
-                    html.I(className="fa-solid fa-circle-info"),
-                    html.P(
-                        '''Search with Play Store app ID - play: <id>\
-                        \nSearch with App Store app title - apple: <title>\
-                        \nSearch with keywords - <keywords>''',
-                        className='info',
-                        style={'width': '18rem'}
-                    )
-                ],
-                className="tooltip"
-            ),
-            width=1
-        ),
-        dbc.Col(
-            dcc.Dropdown(["Play", "Apple"], value="Play", id='search-type')
-        ),
-        dbc.Col(
-            dbc.Input(id="search-term", type="search", placeholder="Enter an app ID or keywords", value="com.mojang.minecraftpe"),
-        ),
-        dbc.Col(
-            dbc.Button(
-                "Search", color="primary", class_name="ms-2",
-                id="search-button", n_clicks=0
-            ),
-            width="auto",
-        ),
-        dcc.Store(id='search-temp', storage_type='session'),
-        dcc.Store(id='details-temp', storage_type='session'),
-        dcc.Store(id='reviews-temp', storage_type='session')
-    ],
-    class_name="g-0 ms-auto flex-wrap mx-auto",
-    align="center",
-    style={'width': '600px'}
-)
 
-play_tab = dbc.Row(
+
+
+
+
+# APPLE TAB CONFIGURATION
+apple_results = dbc.Row(
     [
         dbc.Col(
             [
@@ -58,18 +23,18 @@ play_tab = dbc.Row(
                         dbc.Row(
                             [
                                 dbc.Col(
-                                    html.Img(id='play-img', height="55px"), width="auto", style={"margin": "auto"}
+                                    html.Img(id='img-apple', height="55px"), width="auto", style={"margin": "auto"}
                                 ),
                                 dbc.Col(
                                     [
-                                        html.H2(html.A(id='play-title', target="_blank")),
-                                        html.H6(["App ID: ", html.Span(id='play-id')]),
+                                        html.H2(html.A(id='title-apple', target="_blank")),
+                                        html.H6(["App ID: ", html.Span(id='id-apple')]),
                                     ]
                                 )
                             ]
                         ),
                         dt.DataTable(
-                            id='play-details',
+                            id='details-apple',
                             columns=[
                                 {"name": "Feature", "id": "Feature"},
                                 {"name": "Value", "id": "Value"}
@@ -77,7 +42,7 @@ play_tab = dbc.Row(
                             style_as_list_view=True,
                             style_cell={'fontSize': '1rem', 'textAlign': 'left', 'paddingRight': '2rem', 'fontFamily': "Helvetica Neue"},
                             style_header={'fontWeight': 'bold', 'backgroundColor': '#808080', 'color': 'white'},
-                            fill_width=False,
+                            fill_width=True,
                             cell_selectable=False,
                             style_table={"marginBotton": "1rem"}
                         )
@@ -85,36 +50,42 @@ play_tab = dbc.Row(
                     type="circle", color="#158cba"
                 ),
                 html.Br(),
-                dbc.Row(
-                    [
-                        html.Div(
-                            [
-                                html.I(className="fa-solid fa-circle-info"),
-                                html.P(
-                                    '''offersIAP: Offers in-app purchases\
-                                    \nRatingsStd: The standard deviation of user ratings\
-                                    \nRatingsSkew: The skewness of user ratings (negative value - skewed towards positive ratings)\
-                                    \ndescriptionSentiment: The app description's compound sentiment score, ranges from -1 to 1\
-                                    \nreviewsSentiment: The average compound sentiment score of the reviews, ranges from -1 to 1\
-                                    \ndescriptionReadability: The estimated school grade level required to understand the text\
-                                    \ndescriptionGrammar: The grammatical correctness rate of the app description, up to 100\
-                                    \nIAPMin: The minimum single-item price for in-app purchases\
-                                    \nIAPMax: The maximum single-item price for in-app purchases\
-                                    \ndeveloperCountry: The Alpha-2 (two-letter) code of the developer's country\
-                                    \ndeveloperNApps: The number of unique apps the developer has on Play Store\
-                                    \ndeveloperAppAgeMedian: The median age (years) of apps in the developer's portfolio''',
-                                    className="info"
-                                ),
-                                " Glossary"
-                            ],
-                            className="tooltip"
-                        ),
-                    ]
-                ),
-                html.Br()
             ],
             width=6
         ),
+    ],
+    justify='center'
+)
+
+apple_tab = dbc.Container(
+    [
+        html.Br(),
+        dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Input(id="search-term-apple", type="search", placeholder="Enter an app ID such as '1024722275'", value="1024722275"),
+                ),
+                dbc.Col(
+                    dbc.Button(
+                        "Search", color="primary", class_name="ms-2",
+                        id="search-button-apple", n_clicks=0
+                    ),
+                    width="auto",
+                ),
+            ]
+        ),
+        apple_results,
+    ]
+)
+
+
+
+
+
+
+# GOOGLE PLAY TAB CONFIGURATION
+play_results = dbc.Row(
+    [
         dbc.Col(
             [
                 html.Br(),
@@ -122,182 +93,210 @@ play_tab = dbc.Row(
                     [
                         dbc.Row(
                             [
-                                dbc.Col(dcc.Graph(id="play-educational")),
-                                dbc.Col(dcc.Graph(id="play-violent")),
+                                dbc.Col(
+                                    html.Img(id='img-play', height="55px"), width="auto", style={"margin": "auto"}
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.H2(html.A(id='title-play', target="_blank")),
+                                        html.H6(["App ID: ", html.Span(id='id-play')]),
+                                    ]
+                                )
                             ]
                         ),
                         dt.DataTable(
-                            id='play-reviews'
+                            id='details-play',
+                            columns=[
+                                {"name": "Feature", "id": "Feature"},
+                                {"name": "Value", "id": "Value"}
+                            ],
+                            style_as_list_view=True,
+                            style_cell={'fontSize': '1rem', 'textAlign': 'left', 'paddingRight': '2rem', 'fontFamily': "Helvetica Neue"},
+                            style_header={'fontWeight': 'bold', 'backgroundColor': '#808080', 'color': 'white'},
+                            fill_width=True,
+                            cell_selectable=False,
+                            style_table={"marginBotton": "1rem"}
                         )
                     ],
                     type="circle", color="#158cba"
                 ),
+                html.Br(),
             ],
-            width=6
-        )
-    ],
-    justify='center'
-)
-
-apple_tab = dbc.Row(
-    [
-        dbc.Col(
-            dcc.Loading(
-                dt.DataTable(
-                    id='apple-details'
-                ),
-                type="circle", color="#158cba"
-            ),
             width=6
         ),
         dbc.Col(
-            dcc.Loading(
-                dt.DataTable(
-                    id='apple-reviews'
-                ),
-                type="circle", color="#158cba"
-            ),
+            dbc.Col(dcc.Graph(id="bar-play")),
             width=6
         )
     ],
     justify='center'
-) 
+)
+
+play_tab = dbc.Container(
+    [
+        html.Br(),
+        dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Input(id="search-term-play", type="search", placeholder="Enter an app ID such as 'com.mojang.minecraftpe'", value="com.mojang.minecraftpe"),
+                ),
+                dbc.Col(
+                    dbc.Button(
+                        "Search", color="primary", class_name="ms-2",
+                        id="search-button-play", n_clicks=0
+                    ),
+                    width="auto",
+                ),
+            ]
+        ),
+        play_results,
+    ]
+)
 
 
+
+
+
+# PAGE LAYOUT
 layout = dbc.Container(
     [
         html.Br(),
-        search_bar,
-        html.Br(),
         dbc.Tabs(
             [
-                dbc.Tab(play_tab, label="Play Store", tab_id='play_tab', tab_style={'marginLeft':'auto'}),
-                dbc.Tab(apple_tab, label="Apple App Store", tab_id='apple_tab', disabled=True)
+                dbc.Tab(apple_tab, label="Apple", tab_id='apple_tab', tab_style={'marginLeft':'auto'}),
+                dbc.Tab(play_tab, label="Google Play", tab_id='play_tab'),
             ],
             active_tab="play_tab",
+            id="tabs"
         )
     ]
 )
 
 
-# callback for updating search term when the search button is clicked
 @dash.callback(
-    Output('search-temp', 'data'),
-    Input('search-button', 'n_clicks'),
-    State('search-term', 'value')
+    Output('search-button-apple', 'disabled'),
+    Output('search-button-play', 'disabled'),
+    Input('tabs', 'active_tab')
 )
-def update_term(click, term):
-    return term
+def disable_buttons(active_tab):
+    apple_disabled = active_tab != 'apple_tab'
+    play_disabled = active_tab != 'play_tab'
+    return apple_disabled, play_disabled
 
-# callbacks for updating metadata
+
+
+
+
+########################################################################
+# APPLE SCRAPER FUNCTIONS
 @dash.callback(
     [
-        Output('details-temp', 'data'),
-        Output('reviews-temp', 'data')
+        Output('title-apple', 'children'),
+        Output('title-apple', 'href'),
+        Output('id-apple', 'children'),
+        Output('img-apple', 'src'),
+        Output('details-apple', 'data'),
     ],
-    Input('search-temp', 'data'),
-    State('search-type', 'value')
+    Input('search-button-apple', 'n_clicks'),
+    State('search-term-apple', 'value'),
 )
-def fetch_info(term, search_type):
-    if "Play" in search_type:
-        # app_id = term
-        # app_id = term.split("play:")[1].strip()
-        try:
-            app = Play(app_id=term)
-            play_details = app.get_details()
-            play_reviews = app.get_reviews(sort='relevance')
-        except:
-            app = Play(search=term)
-            play_details = app.get_details()
-            play_reviews = app.get_reviews(sort='relevance')
-    elif "Apple" in search_type:
-        # app_id = term.split("play:")[1].strip()
-        pass
-    # else:
-        # app = Play(search=term)
-        # play_details = app.get_details()
-        # play_reviews = app.get_reviews(sort='relevance')
-    return [play_details, play_reviews]
+def apple_details(click, term):
+    """
+    Function to display details on Apple apps
 
-@dash.callback(
-    [
-        Output('play-title', 'children'),
-        Output('play-title', 'href'),
-        Output('play-id', 'children'),
-        Output('play-img', 'src'),
-    ],
-    Input('details-temp', 'data')
-)
-def update_meta(data):
-    return [data['title'], data['url'], data['appId'], data['icon']]
+    Parameters
+    ----------
+    term - (str) app id
 
-@dash.callback(
-    [
-        Output('play-details', 'data'),
-        # Output('play-reviews', 'children'),
-        # Output('apple-details', 'children'),
-        # Output('apple-reviews', 'children')
-    ],
-    [
-        Input('details-temp', 'data'),
-        Input('reviews-temp', 'data')
-    ],
-    # background=True
-)
-def update_tables(details, reviews):
-    play_info = play_features(details, reviews)
-    filter_features = ['title', 'appId', 'description', 'inAppProductPrice', 'developerId',
-                       'developerAddress', 'genre', 'contentRatingDescription', 'released']
-    play_table = pd.DataFrame(play_info, index=[0])
-    play_table.drop(columns=filter_features, inplace=True)
-    return [play_table.melt(var_name="Feature", value_name="Value").to_dict('records')]
+    Returns
+    -------
+    List containing various information on the app scraped
+    """
+    try:
+        app = Apple(app_id=term)
+        apple_details = app.get_details()
+    except Exception as e:
+        print(e)
+        return ["Error", "", "", "", []]
 
-@dash.callback(
-    [
-        Output('play-educational', 'figure'),
-        Output('play-violent', 'figure'),
-    ],
-    [
-        Input('details-temp', 'data'),
-        Input('reviews-temp', 'data')
+    ttii = [apple_details['trackName'], apple_details['trackViewUrl'], apple_details['trackId'], apple_details['artworkUrl100']]
+
+    details = [
+        {"Feature": "Content Rating", "Value": apple_details["contentAdvisoryRating"]},
+        {"Feature": "Score", "Value": apple_details["averageUserRating"]},
+        {"Feature": "# of Ratings", "Value": apple_details["userRatingCount"]},
+        {"Feature": "Price", "Value": f"${apple_details['price']}"},
     ]
+    return ttii + [details]
+
+
+
+
+
+
+
+
+
+########################################################################
+# GOOGLE PLAY SCRAPER FUNCTIONS
+@dash.callback(
+    [
+        Output('title-play', 'children'),
+        Output('title-play', 'href'),
+        Output('id-play', 'children'),
+        Output('img-play', 'src'),
+        Output('details-play', 'data'),
+        Output('bar-play', 'figure'),
+    ],
+    Input('search-button-play', 'n_clicks'),
+    State('search-term-play', 'value'),
 )
-def update_scores(details, reviews):
-    play_info = play_features(details, reviews)
-    pred_e = generate_predictions(play_info, 'educational')
-    pred_v = generate_predictions(play_info, 'violent')
-    fig_e = go.Figure(
+def play_details(click, term):
+    """
+    Function to display details on Google Play apps
+
+    Parameters
+    ----------
+    term - (str) app id
+
+    Returns
+    -------
+    List containing various information on the app scraped and a figure
+    """
+    try:
+        app = Play(app_id=term)
+        play_details = app.get_details()
+    except Exception as e:
+        print(e)
+        return ["Error", "", "", "", []]
+
+
+    ttii = [play_details['title'], play_details['url'], play_details['appId'], play_details['icon']]
+    details = [
+        {"Feature": "Content Rating", "Value": play_details["contentRating"]},
+        {"Feature": "Score", "Value": play_details["score"]},
+        {"Feature": "# of Ratings", "Value": play_details["ratings"]},
+        {"Feature": "# of Reviews", "Value": play_details["reviews"]},
+        {"Feature": "# of Installs", "Value": play_details["realInstalls"]},
+        {"Feature": "Offers IAP?", "Value": play_details["offersIAP"]},
+        {"Feature": "Ad Supported?", "Value": play_details["adSupported"]},
+        {"Feature": "Price", "Value": f"${play_details['price']}"},
+    ]
+
+
+    star_ratings = [1, 2, 3, 4, 5]
+    b = go.Figure(
         data=[
-            go.Pie(
-                values=[pred_e, 1-pred_e],
-                hole=.3, hoverinfo="skip",
-                marker_colors=['#158cba', '#d1d1d1'],
+            go.Bar(
+                x = star_ratings,
+                y=play_details["histogram"],
             )
-        ], layout_showlegend=False)
-    fig_e.update_layout(
-        autosize=False,
-        width=250,
-        height=250,
-        margin=dict(l=10, r=10, t=40, b=10),
-        title_text="Educational",
-        title_x=0.5,
-        font_color="black",
+        ]
     )
-    fig_v = go.Figure(
-        data=[
-            go.Pie(
-                values=[pred_v, 1-pred_v],
-                hole=.3, hoverinfo="skip",
-                marker_colors=['#158cba', '#d1d1d1'],
-            )
-        ], layout_showlegend=False)
-    fig_v.update_layout(
-        autosize=False,
-        width=250,
-        height=250,
-        margin=dict(l=10, r=10, t=40, b=10),
-        title_text="Violent",
-        title_x=0.5,
-        font_color="black",
+    b.update_layout(
+        title_text='Bar Chart of Play Details',
+        xaxis_title='Value',
+        yaxis_title='Frequency',
     )
-    return [fig_e, fig_v]
+
+    return ttii + [details, b]
