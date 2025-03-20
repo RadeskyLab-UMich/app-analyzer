@@ -42,11 +42,6 @@ header = dbc.Navbar(
                         width="auto",
                         className="nav-link"
                     ),
-                    # dbc.Col(
-                    #     dcc.Link('Audio Extractor', href=page_registry['pages.audio_extractor']['path']),
-                    #     width="auto",
-                    #     className="nav-link"
-                    # ),
                     dbc.Col(
                         html.A('Code', href="https://github.com/RadeskyLab-UMich/app-analyzer", target="_blank"),
                         width="auto",
