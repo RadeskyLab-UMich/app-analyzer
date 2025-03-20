@@ -21,10 +21,6 @@ dash.register_page(__name__)
 
 
 
-features_tube = ['video_id', 'unavailable', 'private', 'requires_payment', 'is_livestream_recording_not_available', 'livestream_recording_not_available',
-            'title', 'description', 'view_count', 'length_seconds', 'channel_name', 'channel_id', 'channel_url', 'family_safe', 'unlisted', 'live_content',
-            'removed', 'category', 'upload_date', 'publish_date', 'video_recommendations']
-
 
 
 # AMAZON TAB CONFIGURATION
@@ -113,17 +109,6 @@ play_tab = dbc.Container(
 you_tab = dbc.Container(
     [
         html.Br(),
-        dbc.Row(
-        [
-            dbc.Col(
-                dcc.Dropdown(sorted(features_tube), value=['title', 'video_id'], persistence=True, multi=True, placeholder="Select Features", id="you-filters")
-            ),
-        ],
-        class_name="g-2 ms-auto flex-wrap mx-auto",
-        align="center",
-        style={"width": "1000px"}
-        ),
-        html.Br(),
         dbc.Textarea(
             className="mb-3", style={"height": "20rem"}, id="dl-input-you",
             placeholder="Enter the video IDs for the YouTube features you wish to download. Please place one video per line.\nEx:\n_cVGrRNi_2k\nSGM--zQnCME"
@@ -131,12 +116,14 @@ you_tab = dbc.Container(
         dbc.Row(
             [
                 dbc.Col(
-                    [
                     dbc.Button("Download", color="primary", id="confirm-button-you", n_clicks=0),
-                    dcc.Download(id="dl-you")
-                    ],
+                    # dcc.Download(id="dl-you"),
                     width="auto"
                 ),
+                dbc.Col(
+                    dcc.Loading(id="loading-you", type="circle", children=[dcc.Download(id='dl-you')]),
+                    width=3
+                )
             ],
             class_name="g-2",
             align='center'
@@ -207,6 +194,154 @@ def get_excel(df, df2, filename):
 
 
 
+def scrape(set_progress, apps_ls, n_apps, time_sleep, app_class):
+    """
+    Function to scrape data for the Amazon, Apple, and Google Play scrapers
+
+    Parameters
+    ----------
+    apps_ls (list) - list of app_ids
+    n_apps (int) - number of apps in list
+    time_sleep (float) - number of seconds to delay between apps scraped
+    app_class (str) - text identifying which scraper to use (ex: 'amazon')
+
+    Returns
+    -------
+    full_apps_ls - list of dictionaries of the scraped apps
+    not_found2 - list of app_ids not found
+    """
+    full_apps_ls = []
+    not_found = []
+    not_found2 = []
+
+    for idx, app_id in enumerate(apps_ls):
+        print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
+        set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
+        app_found = False
+
+        try:
+            if app_class == "amazon":
+                app_info = AmazonApp(id=app_id.strip())
+                amazon_details = app_info.get_app()
+
+                if amazon_details == {}:
+                    not_found.append(app_id)
+                else:
+                    full_apps_ls.append(amazon_details)
+            elif app_class == "apple":
+                app_info = Apple(app_id=app_id.strip())
+                apple_details = app_info.get_details()
+                app_found = True
+            else:
+                app_info = Play(app_id=app_id.strip())
+                play_info = app_info.get_details()
+                app_found = True
+
+
+            if app_found:
+                check = False
+                count = 0
+
+                while check == False and count < 30:
+                    try:
+                        if app_class == "apple":
+                            app = AppleApp(id=f"{app_id}")
+                            apple_details2 = app.get_app()
+
+                            if apple_details2:
+                                apple_details.update(apple_details2)
+                                full_apps_ls.append(apple_details)
+                                check = True
+                        else:
+                            app = GoogleApp(app_id)
+                            play_info2 = app.get_app()
+
+                            if play_info2:
+                                play_info.update(play_info2)
+                                full_apps_ls.append(play_info)
+                                check = True
+                    except Exception as e:
+                        print(e)
+
+                    count += 1
+                    time.sleep(1)
+
+                if count == 30:
+                    full_apps_ls.append(apple_details)
+
+
+            time.sleep(time_sleep)
+        except Exception as e:
+            print(e)
+            not_found.append(app_id)
+
+        time.sleep(time_sleep)
+
+    for app_id in not_found:
+        try:
+            if app_class == "amazon":
+                app_info = AmazonApp(id=app_id.strip())
+                amazon_details = app_info.get_app()
+
+                if amazon_details == {}:
+                    not_found2.append(app_id)
+                else:
+                    full_apps_ls.append(amazon_details)
+            elif app_class == "apple":
+                app_info = Apple(app_id=app_id.strip())
+                apple_details = app_info.get_details()
+                app_found = True
+            else:
+                app_info = Play(app_id=app_id.strip())
+                play_info = app_info.get_details()
+                app_found = True
+
+
+            if app_found:
+                check = False
+                count = 0
+
+                while check == False and count < 30:
+                    try:
+                        if app_class == "apple":
+                            app = AppleApp(id=f"{app_id}")
+                            apple_details2 = app.get_app()
+
+                            if apple_details2:
+                                apple_details.update(apple_details2)
+                                full_apps_ls.append(apple_details)
+                                check = True
+                        else:
+                            app = GoogleApp(app_id)
+                            play_info2 = app.get_app()
+
+                            if play_info2:
+                                play_info.update(play_info2)
+                                full_apps_ls.append(play_info)
+                                check = True
+                    except Exception as e:
+                        print(e)
+
+                    count += 1
+                    time.sleep(1)
+
+                if count == 30:
+                    full_apps_ls.append(apple_details)
+
+            time.sleep(time_sleep)
+        except Exception as e:
+            print(e)
+            not_found2.append(app_id)
+
+        time.sleep(time_sleep)
+
+    return full_apps_ls, not_found2
+
+
+
+
+
+
 ########################################################################
 # AMAZON SCRAPER FUNCTIONS
 @dash.callback(
@@ -240,50 +375,12 @@ def update_amazon_info(set_progress, click, apps):
     -------
     df (download) - dataframe of the scraped ID information
     """
-
-    full_amazon_ls = []
-    not_found = []
-    not_found2 = []
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
-
-    for idx, app_id in enumerate(apps_ls):
-        print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
-        set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
-
-        try:
-            app_info = AmazonApp(id=app_id.strip())
-            amazon_details = app_info.get_app()
-            time.sleep(60)
-
-            if amazon_details == {}:
-                not_found.append(app_id)
-            else:
-                full_amazon_ls.append(amazon_details)
-        except Exception as e:
-            print(e)
-            not_found.append(app_id)
-
-        time.sleep(60)
-
-    for app_id in not_found:
-        try:
-            app_info = AmazonApp(id=app_id.strip())
-            amazon_details = app_info.get_app()
-            time.sleep(60)
-
-            if amazon_details == {}:
-                not_found2.append(app_id)
-            else:
-                full_amazon_ls.append(amazon_details)
-        except Exception as e:
-            print(e)
-            not_found2.append(app_id)
-
-        time.sleep(60)
+    full_amazon_ls, not_found = scrape(set_progress, apps_ls, n_apps, 90, "amazon")
 
     df = pd.DataFrame(full_amazon_ls)
-    df2 = pd.DataFrame({"appId": not_found2})
+    df2 = pd.DataFrame({"appId": not_found})
 
     return get_excel(df, df2, "amazon_features.xlsx")
 
@@ -326,87 +423,9 @@ def update_apple_info(set_progress, click, apps):
     -------
     df (download) - dataframe of the scraped ID information
     """
-
-    full_apple_ls = []
-    not_found = []
-    not_found2 = []
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
-
-    for idx, app_id in enumerate(apps_ls):
-        print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
-        set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
-        app_found = False
-        try:
-            app_info = Apple(app_id=app_id.strip())
-            apple_details = app_info.get_details()
-            time.sleep(0.5)
-            app_found = True
-        except Exception as e:
-            print(e)
-            not_found.append(app_id)
-
-        if app_found:
-            check = False
-            count = 0
-
-            while check == False and count < 30:
-                try:
-                    app = AppleApp(id=f"{app_id}")
-                    apple_details2 = app.get_app()
-
-                    if apple_details2:
-                        apple_details.update(apple_details2)
-                        full_apple_ls.append(apple_details)
-                        check = True
-                except Exception as e:
-                    print(e)
-
-                count += 1
-                time.sleep(1)
-
-            if count == 30:
-                full_apple_ls.append(apple_details)
-
-
-        time.sleep(0.5)
-
-    for app_id in not_found:
-        app_found = False
-
-        try:
-            app_info = Apple(app_id=app_id.strip())
-            apple_details = app_info.get_details()
-            time.sleep(0.5)
-            app_found = True
-        except Exception as e:
-            print(e)
-            not_found2.append(app_id)
-
-        if app_found:
-            check = False
-            count = 0
-
-            while check == False and count < 30:
-                try:
-                    app = AppleApp(id=f"{app_id}")
-                    apple_details2 = app.get_app()
-
-                    if apple_details2:
-                        apple_details.update(apple_details2)
-                        full_apple_ls.append(apple_details)
-                        check = True
-                except Exception as e:
-                    print(e)
-
-                count += 1
-                time.sleep(1)
-
-            if count == 30:
-                full_apple_ls.append(apple_details)
-
-
-        time.sleep(0.5)
+    full_apple_ls, not_found = scrape(set_progress, apps_ls, n_apps, 0.5, "apple")
 
     df = pd.DataFrame(full_apple_ls)
 
@@ -436,7 +455,7 @@ def update_apple_info(set_progress, click, apps):
     first_column = df.pop('date_scraped')
     df.insert(0, 'date_scraped', first_column)
 
-    df2 = pd.DataFrame({"appId": not_found2})
+    df2 = pd.DataFrame({"appId": not_found})
 
     return get_excel(df, df2, "apple_features.xlsx")
 
@@ -477,86 +496,9 @@ def update_play_info(set_progress, click, apps):
     -------
     df (download) - dataframe of the scraped app ID information
     """
-
-    full_play_ls = []
-    not_found = []
-    not_found2 = []
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
-
-
-    for idx, app_id in enumerate(apps_ls):
-        print(f"Fetching {idx + 1}/{n_apps}: {app_id}")
-
-        set_progress((idx + 1, f"{int((idx + 1) / n_apps * 100)} %", n_apps))
-        app_found = False
-        try:
-            app_info = Play(app_id=app_id.strip())
-            play_info = app_info.get_details()
-            time.sleep(0.5)
-            app_found = True
-        except Exception as e:
-            print(e)
-            not_found.append(app_id)
-
-        if app_found:
-            check = False
-            count = 0
-
-            while check == False and count < 30:
-                try:
-                    app = GoogleApp(app_id)
-                    play_info2 = app.get_app()
-
-                    if play_info2:
-                        play_info.update(play_info2)
-                        full_play_ls.append(play_info)
-                        check = True
-                except Exception as e:
-                    print(e)
-
-                count += 1
-                time.sleep(1)
-
-            if count == 30:
-                full_play_ls.append(play_info)
-
-        time.sleep(0.5)
-
-    for app_id in not_found:
-        app_found = False
-        try:
-            app_info = Play(app_id=app_id.strip())
-            play_info = app_info.get_details()
-            time.sleep(0.5)
-            app_found = True
-        except Exception as e:
-            print(e)
-            not_found2.append(app_id)
-
-        if app_found:
-            check = False
-            count = 0
-
-            while check == False and count < 30:
-                try:
-                    app = GoogleApp(app_id)
-                    play_info2 = app.get_app()
-
-                    if play_info2:
-                        play_info.update(play_info2)
-                        full_play_ls.append(play_info)
-                        check = True
-                except Exception as e:
-                    print(e)
-
-                count += 1
-                time.sleep(1)
-
-            if count == 30:
-                full_play_ls.append(play_info)
-
-        time.sleep(0.5)
+    full_play_ls, not_found = scrape(set_progress, apps_ls, n_apps, 0.5, "google")
 
 
     df = pd.DataFrame(full_play_ls)
@@ -585,7 +527,7 @@ def update_play_info(set_progress, click, apps):
     df.insert(0, 'date_scraped', first_column)
 
 
-    df2 = pd.DataFrame({"appId": not_found2})
+    df2 = pd.DataFrame({"appId": not_found})
 
     return get_excel(df, df2, "play_features.xlsx")
 
@@ -629,12 +571,11 @@ async def get_videos(click, apps):
     ],
     [
         State('dl-input-you', 'value'),
-        State('you-filters', 'value')
     ],
     prevent_initial_call=True,
     background=True
 )
-def update_youtube_info(click, apps, filters):
+def update_youtube_info(click, apps):
     """
     Function to scrape data on YouTube videos and download them in an .xlsx file.
 
@@ -649,21 +590,10 @@ def update_youtube_info(click, apps, filters):
 
     df = asyncio.run(get_videos(click, apps))
 
-    if not filters:
-        today = datetime.now()
-        formatted_date = today.strftime("%m/%d/%Y")
-        df["date_scraped"] = formatted_date
+    today = datetime.now()
+    formatted_date = today.strftime("%m/%d/%Y")
+    df["date_scraped"] = formatted_date
 
-        first_column = df.pop('date_scraped')
-        df.insert(0, 'date_scraped', first_column)
-        return dcc.send_data_frame(df.to_excel, "youtube_features.xlsx", index=False)
-    else:
-        df.drop(columns=df.columns.difference(filters), inplace=True)
-
-        today = datetime.now()
-        formatted_date = today.strftime("%m/%d/%Y")
-        df["date_scraped"] = formatted_date
-
-        first_column = df.pop('date_scraped')
-        df.insert(0, 'date_scraped', first_column)
-        return dcc.send_data_frame(df.to_excel, "youtube_features.xlsx", index=False)
+    first_column = df.pop('date_scraped')
+    df.insert(0, 'date_scraped', first_column)
+    return dcc.send_data_frame(df.to_excel, "youtube_features.xlsx", index=False)
