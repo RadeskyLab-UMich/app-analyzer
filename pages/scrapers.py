@@ -8,6 +8,7 @@ import time
 from datetime import datetime
 import asyncio
 import io
+import random
 
 from api import Play, Apple
 from apple_scraper import AppleApp
@@ -202,7 +203,7 @@ def scrape(set_progress, apps_ls, n_apps, time_sleep, app_class):
     ----------
     apps_ls (list) - list of app_ids
     n_apps (int) - number of apps in list
-    time_sleep (float) - number of seconds to delay between apps scraped
+    time_sleep (list) - list of two numbers used for random to get seconds to delay between apps scraped
     app_class (str) - text identifying which scraper to use (ex: 'amazon')
 
     Returns
@@ -270,12 +271,12 @@ def scrape(set_progress, apps_ls, n_apps, time_sleep, app_class):
                     full_apps_ls.append(apple_details)
 
 
-            time.sleep(time_sleep)
+            time.sleep(random.randint(time_sleep[0], time_sleep[1]))
         except Exception as e:
             print(e)
             not_found.append(app_id)
 
-        time.sleep(time_sleep)
+        time.sleep(random.randint(time_sleep[0], time_sleep[1]))
 
     for app_id in not_found:
         try:
@@ -328,12 +329,12 @@ def scrape(set_progress, apps_ls, n_apps, time_sleep, app_class):
                 if count == 30:
                     full_apps_ls.append(apple_details)
 
-            time.sleep(time_sleep)
+            time.sleep(random.randint(time_sleep[0], time_sleep[1]))
         except Exception as e:
             print(e)
             not_found2.append(app_id)
 
-        time.sleep(time_sleep)
+        time.sleep(random.randint(time_sleep[0], time_sleep[1]))
 
     return full_apps_ls, not_found2
 
@@ -377,7 +378,7 @@ def update_amazon_info(set_progress, click, apps):
     """
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
-    full_amazon_ls, not_found = scrape(set_progress, apps_ls, n_apps, 90, "amazon")
+    full_amazon_ls, not_found = scrape(set_progress, apps_ls, n_apps, [60, 100], "amazon")
 
     df = pd.DataFrame(full_amazon_ls)
     df2 = pd.DataFrame({"appId": not_found})
@@ -425,7 +426,7 @@ def update_apple_info(set_progress, click, apps):
     """
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
-    full_apple_ls, not_found = scrape(set_progress, apps_ls, n_apps, 0.5, "apple")
+    full_apple_ls, not_found = scrape(set_progress, apps_ls, n_apps, [1, 2], "apple")
 
     df = pd.DataFrame(full_apple_ls)
 
@@ -498,7 +499,7 @@ def update_play_info(set_progress, click, apps):
     """
     apps_ls = apps.split('\n')
     n_apps = len(apps_ls)
-    full_play_ls, not_found = scrape(set_progress, apps_ls, n_apps, 0.5, "google")
+    full_play_ls, not_found = scrape(set_progress, apps_ls, n_apps, [1, 2], "google")
 
 
     df = pd.DataFrame(full_play_ls)
@@ -541,23 +542,30 @@ def update_play_info(set_progress, click, apps):
 
 ########################################################################
 # YOUTUBE SCRAPER FUNCTIONS
-async def get_videos(click, apps):
+async def get_videos(click, vids):
     """
     Function to get video details based on the list provided.
 
     Parameters
     ----------
-    apps (str) - video IDs
+    vids (str) - video IDs
 
     Returns
     -------
-    df - dataframe of thevideo details
+    video_df - pandas DataFrame of thevideo details
 
     """
+    video_ids = vids.split()
     scraper = YoutubeScraper()
 
-    video_ids = apps.split()
-    video_df = await scraper.video_metadata(video_ids)
+    tasks = [scraper.get_video_page(video_id) for video_id in video_ids]
+    responses = dict(await asyncio.gather(*tasks))
+
+    rows = [scraper.get_video(video_id, response) for video_id, response in responses.items()]
+    video_df = pd.DataFrame(rows).replace(r'^\s*$', None, regex=True)
+
+    # video_df = await scraper.get_video_metadata(video_ids)
+    await scraper.close_session()
 
     return video_df
 
@@ -575,20 +583,20 @@ async def get_videos(click, apps):
     prevent_initial_call=True,
     background=True
 )
-def update_youtube_info(click, apps):
+def update_youtube_info(click, vids):
     """
     Function to scrape data on YouTube videos and download them in an .xlsx file.
 
     Parameters
     ----------
-    apps (str) - string of video IDs
+    vids (str) - string of video IDs
 
     Returns
     -------
     df (download) - dataframe of the scraped video ID information
     """
 
-    df = asyncio.run(get_videos(click, apps))
+    df = asyncio.run(get_videos(click, vids))
 
     today = datetime.now()
     formatted_date = today.strftime("%m/%d/%Y")
