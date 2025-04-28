@@ -2,16 +2,16 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
-import google.cloud.logging
-import logging
+# import google.cloud.logging
+# import logging
 
 class AmazonApp:
     def __init__(self, id):
         HEADERS = ({'User-Agent':
            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
             'Accept-Language': 'en-US, en;q=0.5'})
-        client = google.cloud.logging.Client()
-        client.setup_logging()
+        # client = google.cloud.logging.Client()
+        # client.setup_logging()
 
         self.app_issue = False
         self.id = id
@@ -24,7 +24,7 @@ class AmazonApp:
         else:
             self.url = requests.get(f"https://www.amazon.com/s?k={self.id}&i=mobile-apps", headers=HEADERS)
             self.soup = BeautifulSoup(self.url.content, "html.parser", from_encoding='utf-8')
-            logging.warning(self.soup.get_text())
+            # logging.warning(self.soup.get_text())
 
             if f"No results for {self.id} in Apps & Games" in self.soup.get_text():
                 self.app_issue = True
