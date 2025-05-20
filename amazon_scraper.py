@@ -30,7 +30,7 @@ class AmazonApp:
                 self.app_issue = True
                 self.asin = ""
             else:
-                self.asin = self.soup.find_all('div', {'data-dib-asin': True})
+                self.asin = self.soup.find_all('div', {'data-csa-c-asin': True})
 
 
             r = len(self.asin)
@@ -38,7 +38,7 @@ class AmazonApp:
                 r = 3
 
             for i in range(r):
-                asin = self.asin[i]['data-dib-asin']
+                asin = self.asin[i]['data-csa-c-asin']
                 self.url = requests.get(f"https://www.amazon.com/dp/{asin}", headers=HEADERS)
                 self.soup = BeautifulSoup(self.url.content, "html.parser", from_encoding='utf-8')
 
