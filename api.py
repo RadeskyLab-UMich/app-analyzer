@@ -3,7 +3,6 @@ import requests
 from google_play_scraper import app, Sort, reviews, reviews_all, search
 from itunes_app_scraper.scraper import AppStoreScraper
 from dotenv import load_dotenv
-import pandas as pd
 load_dotenv()
 
 
@@ -150,9 +149,6 @@ class Apple:
         -------
         result (dict) or None - dictionary of the app containing info such as title, price, etc., or None if not found.
         """
-
-        # SERP_PROD = "https://serpapi.com/search.json?engine=apple_product&"
-        # result = requests.get(f"{SERP_PROD}country={self.country}&product_id={self.app_id}&api_key={os.getenv('SERP_KEY')}").json()
         scraper = AppStoreScraper()
         try:
             result = scraper.get_app_details(self.app_id, country=self.country, lang="en")
