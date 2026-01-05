@@ -1,7 +1,6 @@
 import dash
 from dash import html, dcc, dash_table as dt
 import dash_bootstrap_components as dbc
-import dash_mantine_components as dmc
 from dash.dependencies import Input, Output, State
 
 import time
@@ -9,6 +8,7 @@ from datetime import datetime
 import asyncio
 import io
 import random
+import pandas as pd
 
 from api import Play, Apple
 from apple_scraper import AppleApp

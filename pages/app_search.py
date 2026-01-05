@@ -4,7 +4,6 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 import api
-from utils import *
 
 dash.register_page(__name__)
 
@@ -248,16 +247,18 @@ def fetch_info(click, term, search_type):
             app = api.search_app(term, store='play', strategy=10)
             apps = [{"title": id["title"], "url": "https://play.google.com/store/apps/details?id="+id["appId"], "appId": id["appId"], "icon": id["icon"]} for id in app]
 
+            print(len(apps))
             return apps
         except Exception as e:
             print(f"Exception occurred: {e}")
     elif "Apple" in search_type:
         try:
             app = api.search_app(term, store='apple', strategy=10)
-            app = [Apple(app_id=id).get_details() for id in app]
+            app = [api.Apple(app_id=id).get_details() for id in app]
 
             apps = [{"title": id["trackName"], "url": id["trackViewUrl"], "appId": id["trackId"], "icon": id["artworkUrl100"]} for id in app]
 
+            print(len(apps))
             return apps
         except Exception as e:
             print(f"Exception occurred: {e}")
@@ -329,15 +330,14 @@ def update_meta(data):
     Each element of each dictionary in the list
     """
 
-    return [data[0]['title'], data[0]['url'], data[0]['appId'], data[0]['icon'],
-        data[1]['title'], data[1]['url'], data[1]['appId'], data[1]['icon'],
-        data[2]['title'], data[2]['url'], data[2]['appId'], data[2]['icon'],
-        data[3]['title'], data[3]['url'], data[3]['appId'], data[3]['icon'],
-        data[4]['title'], data[4]['url'], data[4]['appId'], data[4]['icon'],
-        data[5]['title'], data[5]['url'], data[5]['appId'], data[5]['icon'],
-        data[6]['title'], data[6]['url'], data[6]['appId'], data[6]['icon'],
-        data[7]['title'], data[7]['url'], data[7]['appId'], data[7]['icon'],
-        data[8]['title'], data[8]['url'], data[8]['appId'], data[8]['icon'],
-        data[9]['title'], data[9]['url'], data[9]['appId'], data[9]['icon'],]
+    new_data = []
+    for d in data:
+        new_data.append(d['title'])
+        new_data.append(d['url'])
+        new_data.append(d['appId'])
+        new_data.append(d['icon'])
 
+    while len(new_data) != 40:
+        new_data.append("")
 
+    return new_data

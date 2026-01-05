@@ -40,17 +40,17 @@ header = dbc.Navbar(
                     dbc.Col(
                         dcc.Link('Scrapers', href=page_registry['pages.scrapers']['path']),
                         width="auto",
-                        className="nav-link"
+                        className="nav-link me-3"
                     ),
                     dbc.Col(
                         html.A('Code', href="https://github.com/RadeskyLab-UMich/app-analyzer", target="_blank"),
                         width="auto",
-                        className="nav-link"
+                        className="nav-link me-3"
                     ),
                     dbc.Col(
                         html.A('Docs', href="https://www.dropbox.com/scl/fi/trner1899b1dk09o1e1ch/App-Data-Analyzer-Documentation.paper?dl=0&rlkey=1qyxf866ivofi6we0fu96ej9s", target="_blank"),
                         width="auto",
-                        className="nav-link"
+                        className="nav-link me-3"
                     ),
                     dbc.Col(
                         dcc.Link('App Search', href=page_registry['pages.app_search']['path']),

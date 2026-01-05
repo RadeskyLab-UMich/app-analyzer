@@ -161,8 +161,8 @@ class YoutubeScraper:
         -------
         TRUE/FALSE value
         """
-        print(initial_player_response)
-        print()
+        # print(initial_player_response)
+        # print()
         return initial_player_response['playabilityStatus']['status'] == 'LOGIN_REQUIRED'
 
     def get_is_removed(self, initial_player_response):
@@ -264,8 +264,10 @@ class YoutubeScraper:
 
         recommendations = []
         for recommendation in recommendations_list:
-            if 'compactVideoRenderer' in recommendation:
-                recommendations.append(recommendation['compactVideoRenderer']['videoId'])
+            # if 'compactVideoRenderer' in recommendation:
+            if 'lockupViewModel' in recommendation:
+                # recommendations.append(recommendation['compactVideoRenderer']['videoId'])
+                recommendations.append(recommendation['lockupViewModel']['rendererContext']['commandContext']['onTap']['innertubeCommand']['watchEndpoint']['videoId'])
 
         return recommendations
 

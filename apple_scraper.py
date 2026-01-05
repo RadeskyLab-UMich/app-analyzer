@@ -192,8 +192,11 @@ class AppleApp:
         -------
         str of age rating (ex: 12+)
         """
-        data = self.soup.find("h1", attrs={"class":"product-header__title app-header__title"})
-        return data.get_text("\n" , strip=True).split("\n")[1]
+        # data = self.soup.find("h1", attrs={"class":"product-header__title app-header__title"})
+        data = self.soup.find("span", attrs={"class":"svelte-km1qy2"})
+
+        # return data.get_text("\n" , strip=True).split("\n")[1]
+        return data.get_text()
 
     def get_app_id(self):
         """
@@ -255,14 +258,18 @@ class AppleApp:
         -------
         combined (dict) - dictionary either empty or filled with keys of the in-app purchase options and the values being their price
         """
-        iap = self.soup.findAll("li", attrs={"class":"list-with-numbers__item"})
+        # iap = self.soup.findAll("li", attrs={"class":"list-with-numbers__item"})
+        iap = self.soup.findAll("div", attrs={"class":"text-pair svelte-1a9curd"})
         combined = {}
 
         if iap:
-            titles = self.soup.findAll("span", attrs={"class":"truncate-single-line truncate-single-line--block"})
-            prices = self.soup.findAll("span", attrs={"class":"list-with-numbers__item__price medium-show-tablecell"})
-            for title, price in zip(titles, prices):
-                combined[title.text] = price.text
+            for i in iap:
+                t = i.get_text("||", strip=True)
+                combined[t.split("||")[0]] = t.split("||")[1]
+            # titles = self.soup.findAll("span", attrs={"class":"truncate-single-line truncate-single-line--block"})
+            # prices = self.soup.findAll("span", attrs={"class":"list-with-numbers__item__price medium-show-tablecell"})
+            # for title, price in zip(titles, prices):
+            #     combined[title.text] = price.text
 
         return combined
 
@@ -283,8 +290,13 @@ class AppleApp:
         str of price (ex: $1.99 -or- Free)
         """
         try:
-            data = self.soup.find("li", attrs={"class":"inline-list__item inline-list__item--bulleted app-header__list__item--price"})
-            return data.get_text(strip=True)
+            data = self.soup.findAll("p", attrs={"class":"attributes svelte-1bm25t"})
+
+            for d in data:
+                if "$" in d.get_text() or "Free" in d.get_text():
+                    return d.get_text(strip=True).split()[0]
+            # data = self.soup.find("li", attrs={"class":"inline-list__item inline-list__item--bulleted app-header__list__item--price"})
+            return ""
         except:
             return "Subscribe to Apple Arcade"
 
@@ -300,10 +312,15 @@ class AppleApp:
         -------
         accum (list) - list of every category of data collected by the app and the specific types, if any.
         """
-        data = self.soup.findAll("div", attrs={"class":"app-privacy__card"})
+        # data = self.soup.findAll("div", attrs={"class":"app-privacy__card"})
+        data = self.soup.find("section", attrs={"id": "privacyTypes"})
+        # print(data)
         accum = []
-        for item in data:
+        for item in data.find("ul", attrs={"class": "grid svelte-7iyek8"}):
             accum.append(item.get_text(" | ", strip=True))
+            # print("hi")
+        # for item in data:
+        #     accum.append(item.get_text(" | ", strip=True))
 
         return accum
 
@@ -585,7 +602,8 @@ class AppleApp:
         str of app subtitle (ex: Your Friends, Your Moments)
         """
         try:
-            data = self.soup.find("h2", attrs={"class":"product-header__subtitle app-header__subtitle"})
+            data = self.soup.find("h2", attrs={"class":"subtitle svelte-1bm25t"})
+            # data = self.soup.find("h2", attrs={"class":"product-header__subtitle app-header__subtitle"})
             return data.get_text(strip=True)
         except:
             return None
