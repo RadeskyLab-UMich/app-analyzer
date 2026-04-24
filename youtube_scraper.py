@@ -90,7 +90,13 @@ class YoutubeScraper:
 
         row['title'] = initial_player_response['videoDetails']['title']
         row['description'] = initial_player_response['videoDetails']['shortDescription']
-        row['view_count'] = int(initial_player_response['videoDetails']['viewCount'])
+        if (initial_player_response['videoDetails']['isTvfilmVideo'] == False):
+            if 'viewCount' in initial_player_response['videoDetails']:
+                row['view_count'] = int(initial_player_response['videoDetails']['viewCount'])
+            else:
+                row['view_count'] = 'error'
+        else:
+            row['view_count'] = None
         #row['like_count']= self.get_like_count(initial_data)
         row['length_seconds'] = int(initial_player_response['videoDetails']['lengthSeconds'])
         row['channel_name'] = initial_player_response['videoDetails']['author']
@@ -267,7 +273,8 @@ class YoutubeScraper:
             # if 'compactVideoRenderer' in recommendation:
             if 'lockupViewModel' in recommendation:
                 # recommendations.append(recommendation['compactVideoRenderer']['videoId'])
-                recommendations.append(recommendation['lockupViewModel']['rendererContext']['commandContext']['onTap']['innertubeCommand']['watchEndpoint']['videoId'])
+                if 'watchEndpoint' in recommendation['lockupViewModel']['rendererContext']['commandContext']['onTap']['innertubeCommand']:
+                   recommendations.append(recommendation['lockupViewModel']['rendererContext']['commandContext']['onTap']['innertubeCommand']['watchEndpoint']['videoId'])
 
         return recommendations
 
